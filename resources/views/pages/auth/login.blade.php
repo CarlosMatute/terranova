@@ -16,7 +16,8 @@
             <div class="auth-form-wrapper px-4 py-5">
               <a href="#" class="noble-ui-logo d-block mb-2">Noble<span>UI</span></a>
               <h5 class="text-muted fw-normal mb-4">Welcome back! Log in to your account.</h5>
-              <form class="forms-sample">
+              <form class="forms-sample" action="{{ route('login') }}" method="POST">
+                @csrf
                 <div class="mb-3">
                   <label for="userEmail" class="form-label">Email address</label>
                   <input type="email" class="form-control" id="userEmail" placeholder="Email">

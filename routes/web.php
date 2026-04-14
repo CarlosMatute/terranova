@@ -11,6 +11,7 @@
 |
 */
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Residenciales\ResidencialesController;
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -20,6 +21,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/', function () {
         return view('dashboard');
+    });
+
+    Route::group(['prefix' => 'residenciales'], function(){
+        Route::get('/', [ResidencialesController::class, 'ver_residenciales']);
     });
 
     Route::group(['prefix' => 'email'], function(){

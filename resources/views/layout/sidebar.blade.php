@@ -1,7 +1,8 @@
 <nav class="sidebar">
   <div class="sidebar-header">
     <a href="#" class="sidebar-brand">
-      Noble<span>UI</span>
+      TERRANOVA
+      <!-- <span>1.0</span> -->
     </a>
     <div class="sidebar-toggler not-active">
       <span></span>
@@ -312,7 +313,7 @@
     </ul>
   </div>
 </nav>
-<nav class="settings-sidebar">
+<!-- <nav class="settings-sidebar">
   <div class="sidebar-body">
     <a href="#" class="settings-sidebar-toggler">
       <i data-feather="settings"></i>
@@ -343,4 +344,4 @@
       </a>
     </div>
   </div>
-</nav>
+</nav> -->

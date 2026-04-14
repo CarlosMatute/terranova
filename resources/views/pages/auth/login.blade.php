@@ -9,37 +9,40 @@
         <div class="row">
           <div class="col-md-4 pe-md-0">
             <div class="auth-side-wrapper" style="background-image: url({{ url('https://via.placeholder.com/219x452') }})">
-
+              <img src="{{ url(asset('/assets/images/poster_login.png')) }}" alt="Avatar" class="auth-side-wrapper" onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/user2-403d6e88.png')) }}';" />
             </div>
           </div>
           <div class="col-md-8 ps-md-0">
             <div class="auth-form-wrapper px-4 py-5">
-              <a href="#" class="noble-ui-logo d-block mb-2">Noble<span>UI</span></a>
-              <h5 class="text-muted fw-normal mb-4">Welcome back! Log in to your account.</h5>
+              <a href="#" class="noble-ui-logo d-block mb-2">TERRANOVA<span>1.0</span></a>
+              <h5 class="text-muted fw-normal mb-4">¡Bienvenido! Inicia sesión en tu cuenta.</h5>
               <form class="forms-sample" action="{{ route('login') }}" method="POST">
                 @csrf
                 <div class="mb-3">
-                  <label for="userEmail" class="form-label">Email address</label>
-                  <input type="email" class="form-control" id="userEmail" placeholder="Email">
+                  <label for="userEmail" class="form-label">Usuario o Correo Electrónico</label>
+                  <input type="text" class="form-control" name="email" id="userEmail" placeholder="Escribe aquí..." required>
                 </div>
                 <div class="mb-3">
-                  <label for="userPassword" class="form-label">Password</label>
-                  <input type="password" class="form-control" id="userPassword" autocomplete="current-password" placeholder="Password">
+                  <label for="userPassword" class="form-label">Contraseña</label>
+                  <input type="password" class="form-control" name="password" id="userPassword" autocomplete="current-password" placeholder="Escribe aquí..." required>
                 </div>
-                <div class="form-check mb-3">
+                <!-- <div class="form-check mb-3">
                   <input type="checkbox" class="form-check-input" id="authCheck">
                   <label class="form-check-label" for="authCheck">
                     Remember me
                   </label>
-                </div>
+                </div> -->
+                @error('error')
+                    <span class="text-danger">{{ $message }}</span>
+                @enderror
                 <div>
-                  <a href="{{ url('/') }}" class="btn btn-primary me-2 mb-2 mb-md-0">Login</a>
-                  <button type="button" class="btn btn-outline-primary btn-icon-text mb-2 mb-md-0">
-                    <i class="btn-icon-prepend" data-feather="twitter"></i>
-                    Login with twitter
+                  <!-- <a href="{{ url('/') }}" class="btn btn-primary me-2 mb-2 mb-md-0">Login</a> -->
+                  <button type="submit" class="btn btn-primary me-2 mb-2 mb-md-0">
+                    <i class="btn-icon-prepend"></i>
+                    Iniciar sesión
                   </button>
                 </div>
-                <a href="{{ url('/auth/register') }}" class="d-block mt-3 text-muted">Not a user? Sign up</a>
+                <!-- <a href="{{ url('/auth/register') }}" class="d-block mt-3 text-muted">Not a user? Sign up</a> -->
               </form>
             </div>
           </div>

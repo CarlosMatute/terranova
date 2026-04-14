@@ -26,25 +26,30 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-            $request->validate([
-                'email' => 'required',
-                'password' => 'required',
-            ]);
-throw new Exception('¡Acceso al sistema denegado!');
+            // Validar datos
+        $request->validate([
+            'email' => ['required'],
+            'password' => ['required'],
+        ]);
+
+        $fieldType = filter_var($request->input('email'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = ([
+            $fieldType => $request->input('email'),
+            'password' => $request->input('password')
+        ]);
+        //throw new Exception($fieldType);
+
             // Intentar autenticar
             if (Auth::attempt($credentials)) {
                 $request->session()->regenerate();
-
-                return response()->json([
-                    'message' => 'Login exitoso',
-                    'user' => Auth::user()
-                ]);
+                return redirect('/');
             }
 
             // Si falla
-            return response()->json([
-                'message' => 'Credenciales incorrectas'
-            ], 401);
+            return back()->withErrors([
+                'error' => 'Usuario o contraseña incorrectos. Inténtalo de nuevo.',
+            ]);
 
                 // $fieldType = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
                 // $user = User::firstOrNew([$fieldType => $request->input('email')]);
@@ -55,5 +60,12 @@ throw new Exception('¡Acceso al sistema denegado!');
                 // auth()->login($user);
                 // return redirect('/');
 
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+
+        return redirect('/');
     }
 }

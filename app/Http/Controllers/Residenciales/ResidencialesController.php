@@ -33,20 +33,58 @@ class ResidencialesController extends Controller
 
     public function guardar_residencial(Request $request)
     {
+        $id = $request->id;
         $nombre = $request->input('nombre');
         $descripcion = $request->input('descripcion');
         $bloque = $request->input('bloque');
         $accion = $request->input('accion');
-        $archivoSeleccionado = array();
-        $archivoSeleccionado = $request->file('archivoSeleccionado');
+        $archivoSeleccionado = null;
+        $residenciales_list = null;
         $msgSuccess = null;
         $msgError = null;
 
         DB::beginTransaction();
         try {
-            throw new Exception($nombre);
 
-            $msgSuccess = "Residencial guardado exitosamente.";
+            if($request->hasFile('archivoSeleccionado')) {
+                $archivos = $request->file('archivoSeleccionado'); 
+                $archivoSeleccionado = $archivos->getClientOriginalName();
+                //$archivos->storeAs('public/residenciales', $archivoSeleccionado);  
+            }
+
+            if($accion == 1){
+                $residencial = collect(\DB::select("INSERT INTO
+                    PUBLIC.RESIDENCIALES (NOMBRE, DESCRIPCION, ID_USER, IMAGEN)
+                VALUES
+                    (:nombre, :descripcion, :id_user, :imagen)
+                RETURNING
+                    ID;", [
+                    "nombre" => $nombre,
+                    "descripcion" => $descripcion,
+                    "id_user" => Auth::id(),
+                    "imagen" => $archivoSeleccionado
+                ]))->first();
+
+                $id = $residencial->id;
+
+                if($request->hasFile('archivoSeleccionado')) {
+                    $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
+                }
+
+                $msgSuccess = "Residencial " . $nombre . " guardada exitosamente.";
+            };
+
+            $residenciales_list = collect(\DB::select("SELECT
+                ID,
+                NOMBRE,
+                DESCRIPCION,
+                IMAGEN
+            FROM
+                RESIDENCIALES
+            WHERE
+                DELETED_AT IS NULL
+                AND ID = :id", ["id" => $id]))->first();
+
             DB::commit();
         } catch (Exception $e) {
             DB::rollback();
@@ -55,7 +93,8 @@ class ResidencialesController extends Controller
 
         return response()->json([
             "msgSuccess" => $msgSuccess,
-            "msgError" => $msgError
+            "msgError" => $msgError,
+            "residenciales_list" => $residenciales_list
         ]);
     }
 }

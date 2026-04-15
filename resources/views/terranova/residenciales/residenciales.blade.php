@@ -65,7 +65,7 @@
                 </h5>
                 <button
                     class="btn btn btn-light btn-xs"
-                    id="btn_agregar_permiso"
+                    id="btn_agregar_residencial"
                     data-bs-toggle="modal"
                     data-bs-target="#modal_agregar_residencial"
                 >
@@ -90,7 +90,7 @@
                                 <td scope="row">{{$row->id}}</td>
                                 <td scope="row">
                                     <div class="me-3">
-                                        <img class="wd-30 ht-30 rounded-circle" src="{{ url(asset('/assets/images/')) }}/{{ $row->imagen }}" alt="user" onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
+                                        <img class="wd-30 ht-30 rounded-circle" src="{{ asset('storage/residenciales/res_'.$row->id.'/'.$row->imagen) }}" alt="user" onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
                                     </div>
                                 </td>
                                 <td scope="row">{{$row->nombre}}</td>
@@ -199,7 +199,7 @@
             </div>
             <div class="modal-footer bg-secondary">
                 <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_permiso">Guardar</button>
+                <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_residencial">Guardar</button>
             </div>
         </div>
     </div>
@@ -292,6 +292,10 @@
             });
 
   });
+
+        $("#btn_agregar_residencial").on("click", function () {
+            accion = 1;
+        });
         
         const inputArchivos = document.getElementById('inputArchivos');
         const fileUpload = document.getElementById('fileUpload');
@@ -364,7 +368,7 @@
         mostrarArchivo();
         }
 
-        $("#btn_guardar_permiso").on("click", function () {
+        $("#btn_guardar_residencial").on("click", function () {
             nombre = $("#modal_agregar_residencial_nombre").val();
             bloques = $("#modal_agregar_residencial_bloques").val();
             descripcion = $("#modal_agregar_residencial_descripcion").val();
@@ -404,11 +408,12 @@
             //espera('Enviando tu solicitud...');
             const formData = new FormData();
             // Agregar otros campos
+            formData.append('accion', accion);
             formData.append('nombre', nombre);
             formData.append('bloques', bloques);
             formData.append('descripcion', descripcion);
             if (archivoSeleccionado) {
-                formData.append('archivo', archivoSeleccionado);
+                formData.append('archivoSeleccionado', archivoSeleccionado);
             }
 
             btn_activo = false;
@@ -428,21 +433,47 @@
                         btn_activo = true;
                         timeout = data.timeout;
                     } else {
-                        titleMsg = "Solicitud Enviada";
+                        titleMsg = "Datos Guardados";
                         textMsg = data.msgSuccess;
                         typeMsg = "success";
-                        timer = null;
-                        timeout = false;
-        
-                        //btn_activo = true;
+                        timer = 2000;
+                        if(accion==1 || accion==2){ 
+                            var row = data.residenciales_list;
+
+                            var nuevaFilaDT=[row.id, row.imagen, row.nombre, row.descripcion, 
+                                '<button type="button" class="btn btn-warning btn-icon btn-xs btn_editar_rol" data-bs-toggle="modal" data-bs-target=".modal_agregar_permioso" '+
+                                'data-id="'+row.id+'" '+
+                                'data-nombre="'+row.nombre+'" '+
+                                'data-descripcion="'+row.descripcion+'">'+
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>'+
+                                '</button> '+
+                                '<button type="button" class="btn btn-danger btn-icon btn-xs" data-bs-toggle="modal" data-bs-target=".modal_eliminar_permiso" '+
+                                'data-id="'+row.id+'" '+
+                                'data-nombre="'+row.nombre+'" '+
+                                'data-descripcion="'+row.descripcion+'">'+
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>'+
+                                '</button> '
+                            ];
+                        }
+                        console.log(row);
+
+                        if(accion==1) {
+                            table.row.add(nuevaFilaDT).draw();
+                        }else if (accion==2) {
+                            table.row(rowNumber).data(nuevaFilaDT);
+                        }else if(accion==3){
+                            table.row(rowNumber).remove().draw();
+                            $("#modal_eliminar_permiso").modal("hide");
+                        }
+                        $("#modal_agregar_residencial").modal("hide");
+                        btn_activo = true;
                     }
                     //console.log(textMsg);
-                    ToastLG({
+                    ToastLG.fire({
                         icon: typeMsg,
                         title: titleMsg,
                         html: textMsg,
-                        timer: timer,
-                        timeout: timeout
+                        timer: timer
                     })
 
                 },

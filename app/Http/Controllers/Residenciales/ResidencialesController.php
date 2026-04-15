@@ -8,6 +8,8 @@ use DB;
 Use Session;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
 
 class ResidencialesController extends Controller
 {
@@ -27,5 +29,33 @@ class ResidencialesController extends Controller
 
         return view('terranova.residenciales.residenciales')
         ->with('residenciales', $residenciales);
+    }
+
+    public function guardar_residencial(Request $request)
+    {
+        $nombre = $request->input('nombre');
+        $descripcion = $request->input('descripcion');
+        $bloque = $request->input('bloque');
+        $accion = $request->input('accion');
+        $archivoSeleccionado = array();
+        $archivoSeleccionado = $request->file('archivoSeleccionado');
+        $msgSuccess = null;
+        $msgError = null;
+
+        DB::beginTransaction();
+        try {
+            throw new Exception($nombre);
+
+            $msgSuccess = "Residencial guardado exitosamente.";
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollback();
+            $msgError = $e->getMessage();
+        }
+
+        return response()->json([
+            "msgSuccess" => $msgSuccess,
+            "msgError" => $msgError
+        ]);
     }
 }

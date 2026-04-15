@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
 
     Route::group(['prefix' => 'residenciales'], function(){
         Route::get('/', [ResidencialesController::class, 'ver_residenciales']);
+        Route::post('/guardar', [ResidencialesController::class, 'guardar_residencial']);
     });
 
     Route::group(['prefix' => 'email'], function(){

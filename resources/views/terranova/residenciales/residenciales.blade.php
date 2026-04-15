@@ -233,9 +233,9 @@
     var descripcion = null;
     var id_pagina = null;
     var id_permiso_requisito = null;
-    var url_guardar_permiso = "{{url('/setic/permisos/guardar')}}"; 
+    var url_guardar_residencial = "{{url('/residenciales/guardar')}}"; 
     var rowNumber=null;
-    var id_seleccionar = localStorage.getItem("tbl_permisos_id_seleccionar");
+    var id_seleccionar = localStorage.getItem("tbl_residenciales_id_seleccionar");
     $(document).ready(function () {
         $.ajaxSetup({
             headers: {
@@ -288,7 +288,7 @@
                 accion=2; 
                 table.$('tr.selected').removeClass('selected'); 
                 $(this).addClass('selected'); 
-                localStorage.setItem("tbl_permisos_id_seleccionar",table.row( this ).data()[0]); 
+                localStorage.setItem("tbl_residenciales_id_seleccionar",table.row( this ).data()[0]); 
             });
 
   });
@@ -367,7 +367,7 @@
         $("#btn_guardar_permiso").on("click", function () {
             nombre = $("#modal_agregar_residencial_nombre").val();
             bloques = $("#modal_agregar_residencial_bloques").val();
-            descripcion = $("#modal_agregar_permioso_descripcion").val();
+            descripcion = $("#modal_agregar_residencial_descripcion").val();
 
                 if(nombre == null || nombre == ''){
                     Toast.fire({
@@ -394,10 +394,62 @@
                 // }
                 
                 if(btn_activo){
-                    //guardar_permiso();
-                    alert('Función de guardar en construcción');
+                    guardar_residencial();
+                    //alert('Función de guardar en construcción');
                 }
                 
         });
+
+        function guardar_residencial() {
+            //espera('Enviando tu solicitud...');
+            const formData = new FormData();
+            // Agregar otros campos
+            formData.append('nombre', nombre);
+            formData.append('bloques', bloques);
+            formData.append('descripcion', descripcion);
+            if (archivoSeleccionado) {
+                formData.append('archivo', archivoSeleccionado);
+            }
+
+            btn_activo = false;
+            console.log([...formData.entries()]);
+            $.ajax({
+                type: "post",
+                url: url_guardar_residencial,
+                data: formData,
+                processData: false, // IMPORTANTE: evita que jQuery convierta los datos a string
+                contentType: false, // IMPORTANTE: permite enviar multipart/form-data
+                success: function (data) {
+                    if (data.msgError != null) {
+                        titleMsg = "Error al Guardar";
+                        textMsg = data.msgError;
+                        typeMsg = "error";
+                        timer = null;
+                        btn_activo = true;
+                        timeout = data.timeout;
+                    } else {
+                        titleMsg = "Solicitud Enviada";
+                        textMsg = data.msgSuccess;
+                        typeMsg = "success";
+                        timer = null;
+                        timeout = false;
+        
+                        //btn_activo = true;
+                    }
+                    //console.log(textMsg);
+                    ToastLG({
+                        icon: typeMsg,
+                        title: titleMsg,
+                        html: textMsg,
+                        timer: timer,
+                        timeout: timeout
+                    })
+
+                },
+                error: function (xhr, status, error) {
+                    alert(xhr.responseText);
+                },
+            });
+        }
   </script>
 @endpush

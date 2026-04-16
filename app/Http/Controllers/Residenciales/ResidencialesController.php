@@ -38,6 +38,7 @@ class ResidencialesController extends Controller
         $descripcion = $request->input('descripcion');
         $bloques = $request->input('bloques');
         $accion = $request->input('accion');
+        $cambiar_imagen = $request->input('cambiar_imagen');
         $archivoSeleccionado = null;
         $residenciales_list = null;
         $msgSuccess = null;
@@ -87,6 +88,8 @@ class ResidencialesController extends Controller
 
                 $msgSuccess = "Residencial " . $nombre . " guardada exitosamente.";
             } elseif($accion == 2){
+                $img_old = collect(\DB::select("SELECT IMAGEN FROM PUBLIC.RESIDENCIALES WHERE ID = :id", ["id" => $id]))->first();
+
                 DB::select("UPDATE
                     PUBLIC.RESIDENCIALES
                 SET
@@ -102,12 +105,36 @@ class ResidencialesController extends Controller
                     "id" => $id
                 ]);
 
-                /*unlink('ruta/del/archivo.txt');
-                if($request->hasFile('archivoSeleccionado')) {
-                    $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
-                }*/
-
+                if($cambiar_imagen) {
+                    DB::select("UPDATE
+                        PUBLIC.RESIDENCIALES
+                    SET
+                        IMAGEN = :imagen
+                    WHERE
+                        ID = :id", [
+                        "imagen" => $archivoSeleccionado,
+                        "id" => $id
+                    ]);
+                    
+                    Storage::delete('public/residenciales/res_' . $id . '/' . $img_old->imagen);
+                    if($request->hasFile('archivoSeleccionado')) {
+                        $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
+                    }
+                }
                 $msgSuccess = "Residencial " . $nombre . " actualizada exitosamente.";
+            }elseif($accion == 3){
+                DB::select("UPDATE
+                    PUBLIC.RESIDENCIALES
+                SET
+                    DELETED_AT = NOW()
+                WHERE
+                    ID = :id", [
+                    "id" => $id
+                ]);
+
+                $msgSuccess = "Residencial " . $nombre . " eliminada exitosamente.";
+            }else{  
+                 throw new Exception("Acción no válida.");
             }
 
             $residenciales_list = collect(\DB::select("SELECT

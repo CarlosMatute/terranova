@@ -6,6 +6,7 @@
   <link href="{{ asset('assets/plugins/dropzone/dropzone.min.css') }}" rel="stylesheet" />
   <link href="{{ asset('assets/plugins/easymde/easymde.min.css') }}" rel="stylesheet" />
   <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 @endpush
 
 @section('content')
@@ -64,7 +65,7 @@
                     <i class="text-white icon-lg pb-3px" data-feather="home"></i> Residenciales Registradas
                 </h5>
                 <button
-                    class="btn btn btn-light btn-xs"
+                    class="btn btn-light btn-sm"
                     id="btn_agregar_residencial"
                     data-bs-toggle="modal"
                     data-bs-target="#modal_agregar_residencial"
@@ -101,6 +102,9 @@
                                         class="btn btn-warning btn-icon btn-xs btn_editar_rol"
                                         data-bs-toggle="modal"
                                         data-bs-target=".modal_agregar_residencial"
+                                        data-id="{{$row->id}}"
+                                        data-nombre="{{$row->nombre}}"
+                                        data-descripcion="{{$row->descripcion}}"
                                     >
                                         <i data-feather="check-square"></i>
                                     </button>
@@ -109,6 +113,9 @@
                                         class="btn btn-danger btn-icon btn-xs"
                                         data-bs-toggle="modal"
                                         data-bs-target=".modal_eliminar_permiso"
+                                        data-id="{{$row->id}}"
+                                        data-nombre="{{$row->nombre}}"
+                                        data-descripcion="{{$row->descripcion}}"
                                     >
                                         <i data-feather="trash-2"></i>
                                     </button>
@@ -142,7 +149,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-2">
-                                    <div class="mb-3">
+                                    <div class="mb-3" id="div_modal_agregar_residencial_bloques">
                                         <label for="modal_agregar_residencial_bloques" class="form-label">Cantidad de Bloques</label>
                                         <input id="modal_agregar_residencial_bloques" class="form-control" type="number" placeholder="¿Cuantos bloques?"/>
                                     </div>
@@ -150,7 +157,7 @@
                                 <div class="col-md-12">
                                     <div class="mb-3">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label for="modal_agregar_residencial_descripcion" class="form-label">Descripción <small class="text-muted">(Opcional)</small></label>
+                                            <label for="modal_agregar_residencial_descripcion" class="form-label">Descripción</label>
                                         </div>
                                         <textarea class="form-control" name="tinymce" id="modal_agregar_residencial_descripcion"
                                             rows="4"
@@ -214,6 +221,7 @@
   <script src="{{ asset('assets/plugins/easymde/easymde.min.js') }}"></script>
   <script src="{{ asset('assets/plugins/dropzone/dropzone.min.js') }}"></script>
   <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 @endpush
 
 @push('custom-scripts')
@@ -223,6 +231,8 @@
   <script src="{{ asset('assets/js/tinymce.js') }}"></script>
   <script src="{{ asset('assets/js/easymde.js') }}"></script>
   <script src="{{ asset('assets/js/alertas_propias.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://code.responsivevoice.org/responsivevoice.js?key=mzutkZDE"></script>
   <script type="text/javascript">
     var table = null; 
     var accion = null;
@@ -249,6 +259,7 @@
                     [10, 30, 50, 100,"Todo"]
                 ],
                 "iDisplayLength": 10,
+                responsive: true,
                 language: {
                     processing:     "Procesando...",
                     search:         "Buscar:",
@@ -294,7 +305,18 @@
   });
 
         $("#btn_agregar_residencial").on("click", function () {
+            $("#div_modal_agregar_residencial_bloques").show();
             accion = 1;
+        });
+
+        $("#modal_agregar_residencial").on("show.bs.modal", function (e) {
+            $("#div_modal_agregar_residencial_bloques").hide();
+            var triggerLink = $(e.relatedTarget);
+            id = triggerLink.data("id");
+            nombre = triggerLink.data("nombre");
+            descripcion = triggerLink.data("descripcion");
+            $("#modal_agregar_residencial_nombre").val(nombre);
+            $("#modal_agregar_residencial_descripcion").val(descripcion);      
         });
         
         const inputArchivos = document.getElementById('inputArchivos');
@@ -389,13 +411,21 @@
                     return true;
                 }
 
-                // if(descripcion == null || descripcion == ''){
-                //     Toast.fire({
-                //         icon: 'error',
-                //         title: 'Valor requerido para Descripción.'
-                //     })
-                //     return true;
-                // }
+                if(bloques <= 0 || bloques > 26){
+                    Toast.fire({
+                        icon: 'error',
+                        title: 'Debe ingresar una cantidad entre 1 y 26 para Bloques.'
+                    })
+                    return true;
+                }
+
+                if(descripcion == null || descripcion == ''){
+                    Toast.fire({
+                        icon: 'error',
+                        title: 'Valor requerido para Descripción.'
+                    })
+                    return true;
+                }
                 
                 if(btn_activo){
                     guardar_residencial();
@@ -417,7 +447,7 @@
             }
 
             btn_activo = false;
-            console.log([...formData.entries()]);
+            //console.log([...formData.entries()]);
             $.ajax({
                 type: "post",
                 url: url_guardar_residencial,
@@ -439,9 +469,16 @@
                         timer = 2000;
                         if(accion==1 || accion==2){ 
                             var row = data.residenciales_list;
-
-                            var nuevaFilaDT=[row.id, row.imagen, row.nombre, row.descripcion, 
-                                '<button type="button" class="btn btn-warning btn-icon btn-xs btn_editar_rol" data-bs-toggle="modal" data-bs-target=".modal_agregar_permioso" '+
+                            var basePath = "{{ url('/') }}/storage/residenciales/res_" + row.id + "/";
+                            var nuevaFilaDT=[row.id, 
+                            '<div class="me-3">' +
+                                '<img class="wd-30 ht-30 rounded-circle" ' +
+                                'src="' + basePath + row.imagen + '" ' +
+                                'alt="user" ' +
+                                'onerror="this.onerror=null; this.src=\'' + "{{ url('/') }}/assets/images/homes.png" + '\';">' +
+                            '</div>',
+                            row.nombre, row.descripcion, 
+                                '<button type="button" class="btn btn-warning btn-icon btn-xs btn_editar_rol" data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial" '+
                                 'data-id="'+row.id+'" '+
                                 'data-nombre="'+row.nombre+'" '+
                                 'data-descripcion="'+row.descripcion+'">'+

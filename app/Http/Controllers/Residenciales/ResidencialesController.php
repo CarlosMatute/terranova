@@ -36,7 +36,7 @@ class ResidencialesController extends Controller
         $id = $request->id;
         $nombre = $request->input('nombre');
         $descripcion = $request->input('descripcion');
-        $bloque = $request->input('bloque');
+        $bloques = $request->input('bloques');
         $accion = $request->input('accion');
         $archivoSeleccionado = null;
         $residenciales_list = null;
@@ -67,12 +67,48 @@ class ResidencialesController extends Controller
 
                 $id = $residencial->id;
 
+                DB::select("INSERT INTO
+                    PUBLIC.BLOQUES_RESIDENCIALES (ID_BLOQUE, ID_RESIDENCIAL)
+                SELECT
+                    ID,
+                    :id_residencial
+                FROM
+                    BLOQUES
+                WHERE
+                    DELETED_AT IS NULL
+                    AND ID BETWEEN 1 AND :bloques", [
+                    "id_residencial" => $id,
+                    "bloques" => $bloques
+                ]);
+
                 if($request->hasFile('archivoSeleccionado')) {
                     $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
                 }
 
                 $msgSuccess = "Residencial " . $nombre . " guardada exitosamente.";
-            };
+            } elseif($accion == 2){
+                DB::select("UPDATE
+                    PUBLIC.RESIDENCIALES
+                SET
+                    NOMBRE = :nombre,
+                    DESCRIPCION = :descripcion,
+                    IMAGEN = :imagen,
+                    UPDATED_AT = NOW()
+                WHERE
+                    ID = :id", [
+                    "nombre" => $nombre,
+                    "descripcion" => $descripcion,
+                    "imagen" => $archivoSeleccionado,
+                    "id" => $id
+                ]);
+
+                /*unlink('ruta/del/archivo.txt');
+                if($request->hasFile('archivoSeleccionado')) {
+                    $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
+                }*/
+
+                $msgSuccess = "Residencial " . $nombre . " actualizada exitosamente.";
+            }
 
             $residenciales_list = collect(\DB::select("SELECT
                 ID,

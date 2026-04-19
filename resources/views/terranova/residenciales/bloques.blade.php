@@ -48,14 +48,27 @@
             font-size: 16px;
         }
     </style>
+
+    <nav class="page-breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url('residenciales') }}">Residenciales</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Bloques</li>
+        </ol>
+    </nav>
+
     <div class="row">
         <div class="col-md-12 grid-margin stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title">Residenciales</h4>
-                    <p class="text-muted">
-                        En este módulo puedes registrar y administrar todas las residenciales, sus bloques y sus lotes.
-                    </p>
+                    <div class="d-flex align-items-start">
+                        <img src="{{ asset('storage/residenciales/res_' . $residencial->id . '/' . $residencial->imagen) }}" class="wd-90 ht-90 me-3" alt="..." onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
+                        <div>
+                            <h5 class="mb-2">Residencial: {{ $residencial->nombre }}</h5>
+                            <p class="text-muted">{{ $residencial->descripcion }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                            <p>En este módulo puede registrar y administrar todos los bloques de la residencial seleccionada.</p>
                 </div>
             </div>
         </div>
@@ -66,54 +79,42 @@
             <div class="card border-secondary">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0">
-                        <i class="text-white icon-lg pb-3px" data-feather="home"></i> Residenciales Registradas
+                        <i class="text-white icon-lg pb-3px" data-feather="square"></i> Bloques Registrados
                     </h5>
                     <button type="button" class="btn btn-light btn-xs" id="btn_agregar_residencial" data-bs-toggle="modal"
                         data-bs-target="#modal_agregar_residencial">
-                        <i data-feather="plus" width="16" height="16"></i> Registrar Residencial
+                        <i data-feather="plus" width="16" height="16"></i> Registrar Bloque
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="jambo_table table table-hover" id="tbl_residenciales" border="1">
+                        <table class="jambo_table table table-hover" id="tbl_bloques" border="1">
                             <thead class="bg-secondary">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
-                                    <th scope="col" class="text-white">Imagen</th>
-                                    <th scope="col" class="text-white">Nombre</th>
-                                    <th scope="col" class="text-white">Descripcion</th>
+                                    <th scope="col" class="text-white">Bloque</th>
+                                    <th scope="col" class="text-white">Lotes</th>
                                     <th scope="col" class="text-white">Opciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($residenciales as $row)
+                                @foreach ($bloques as $row)
                                     <tr style="font-size: small">
                                         <td scope="row">{{ $row->id }}</td>
                                         <td scope="row">
-                                            <div class="me-3">
-                                                <img class="wd-30 ht-30 rounded-circle"
-                                                    src="{{ asset('storage/residenciales/res_' . $row->id . '/' . $row->imagen) }}"
-                                                    alt="user"
-                                                    onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
-                                            </div>
-                                        </td>
-                                        <td scope="row">{{ $row->nombre }}</td>
-                                        <td scope="row">{{ $row->descripcion }}</td>
-                                        <td scope="row">
-                                            <button type="button" class="btn btn-warning btn-xs"
-                                                data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial"
-                                                data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}"
-                                                data-descripcion="{{ $row->descripcion }}">
-                                                <i data-feather="check-square" width="16" height="16"></i> Editar
+                                            <button type="button" class="btn btn-primary btn-icon-text">
+                                                {{ $row->bloque }}
                                             </button>
+                                        </td>
+                                        <td scope="row">{{ $row->lotes }}</td>
+                                        <td scope="row">
                                             <button type="button" class="btn btn-danger btn-xs"
-                                                data-bs-toggle="modal" data-bs-target=".modal_eliminar_residencial"
-                                                data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}"
-                                                data-descripcion="{{ $row->descripcion }}">
+                                                data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque"
+                                                data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}"
                                                 <i data-feather="trash-2" width="16" height="16"></i> Eliminar
                                             </button>
                                             <a href="{{ url('residenciales/' . $row->id . '/bloques') }}" class="btn btn-success btn-xs" role="button" aria-pressed="true">
-                                                <i data-feather="square" width="16" height="16"></i> Bloques
+                                                <i data-feather="log-in" width="16" height="16"></i> Lotes
                                             </a>
                                         </td>
                                     </tr>
@@ -198,7 +199,7 @@
             </div>
         </div>
     </div>
-    <div class="modal fade bd-example modal_eliminar_residencial" id="modal_eliminar_residencial" tabindex="-1"
+    <div class="modal fade bd-example modal_eliminar_bloque" id="modal_eliminar_bloque" tabindex="-1"
         aria-labelledby="myExtraLargeModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -221,7 +222,7 @@
                                                         registro?</strong></label></h4>
                                             <br>
                                             <h5><label class="form-label"
-                                                    id="modal_eliminar_residencial_informacion"></label></h5>
+                                                    id="modal_eliminar_bloque_informacion"></label></h5>
                                             <br>
                                             <p class="fw-normal">Este proceso no se puede revertir</p>
                                         </div>
@@ -274,7 +275,7 @@
         var cambiar_imagen = false;
         var url_guardar_residencial = "{{ url('/residenciales/guardar') }}";
         var rowNumber = null;
-        var id_seleccionar = localStorage.getItem("tbl_residenciales_id_seleccionar");
+        var id_seleccionar = localStorage.getItem("tbl_bloques_id_seleccionar");
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -282,7 +283,7 @@
                 }
             });
 
-            table = $('#tbl_residenciales').DataTable({
+            table = $('#tbl_bloques').DataTable({
                 "aLengthMenu": [
                     [10, 30, 50, 100, -1],
                     [10, 30, 50, 100, "Todo"]
@@ -312,7 +313,7 @@
                     }
                 }
             });
-            $('#tbl_residenciales').each(function() {
+            $('#tbl_bloques').each(function() {
                 var datatable = $(this);
                 // SEARCH - Add the placeholder for Search and Turn this into in-line form control
                 var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
@@ -323,7 +324,7 @@
                 length_sel.removeClass('form-control-sm');
             });
 
-            $("#tbl_residenciales tbody").on("click", "tr", function() {
+            $("#tbl_bloques tbody").on("click", "tr", function() {
                 let row = table.row(this);
                 let data = row.data();
                 if (!data) return;
@@ -332,7 +333,7 @@
                 $("#fileUpload").hide();
                 table.$('tr.selected').removeClass('selected');
                 $(this).addClass('selected');
-                localStorage.setItem("tbl_residenciales_id_seleccionar", data[0]);
+                localStorage.setItem("tbl_bloques_id_seleccionar", data[0]);
             });
 
         });
@@ -371,12 +372,12 @@
             $("#modal_agregar_residencial_descripcion").val(descripcion);
         });
 
-        $("#modal_eliminar_residencial").on("show.bs.modal", function(e) {
+        $("#modal_eliminar_bloque").on("show.bs.modal", function(e) {
             var triggerLink = $(e.relatedTarget);
             id = triggerLink.data("id");
             nombre = triggerLink.data("nombre");
             descripcion = triggerLink.data("descripcion");
-            $("#modal_eliminar_residencial_informacion").html(nombre);
+            $("#modal_eliminar_bloque_informacion").html(nombre);
         });
 
         $(".modal-footer").on("click", "#btn_eliminar_residencial", function() {
@@ -571,7 +572,7 @@
 
                                     // ELIMINAR
                                     '<button type="button" class="btn btn-danger btn-xs" ' +
-                                    'data-bs-toggle="modal" data-bs-target=".modal_eliminar_residencial" ' +
+                                    'data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" ' +
                                     'data-id="' + row.id + '" ' +
                                     'data-nombre="' + row.nombre + '" ' +
                                     'data-descripcion="' + row.descripcion + '">' +
@@ -594,7 +595,7 @@
                             table.row(rowNumber).data(nuevaFilaDT);
                         } else if (accion == 3) {
                             table.row(rowNumber).remove().draw();
-                            $("#modal_eliminar_residencial").modal("hide");
+                            $("#modal_eliminar_bloque").modal("hide");
                         }
                         $("#modal_agregar_residencial").modal("hide");
                         btn_activo = true;

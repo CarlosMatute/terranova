@@ -38,7 +38,7 @@ class ResidencialesController extends Controller
         $descripcion = $request->input('descripcion');
         $bloques = $request->input('bloques');
         $accion = $request->input('accion');
-        $cambiar_imagen = $request->input('cambiar_imagen');
+        $cambiar_imagen = ($request->input('cambiar_imagen') == 'true') ? true : false;
         $archivoSeleccionado = null;
         $residenciales_list = null;
         $msgSuccess = null;
@@ -46,7 +46,7 @@ class ResidencialesController extends Controller
 
         DB::beginTransaction();
         try {
-
+            //throw new Exception($cambiar_imagen);
             if($request->hasFile('archivoSeleccionado')) {
                 $archivos = $request->file('archivoSeleccionado'); 
                 $archivoSeleccionado = $archivos->getClientOriginalName();
@@ -95,13 +95,11 @@ class ResidencialesController extends Controller
                 SET
                     NOMBRE = :nombre,
                     DESCRIPCION = :descripcion,
-                    IMAGEN = :imagen,
                     UPDATED_AT = NOW()
                 WHERE
                     ID = :id", [
                     "nombre" => $nombre,
                     "descripcion" => $descripcion,
-                    "imagen" => $archivoSeleccionado,
                     "id" => $id
                 ]);
 
@@ -159,5 +157,42 @@ class ResidencialesController extends Controller
             "msgError" => $msgError,
             "residenciales_list" => $residenciales_list
         ]);
+    }
+
+    public function ver_bloques($id_residencial)
+    {
+
+        $residencial = collect(\DB::select("SELECT
+            ID,
+            NOMBRE,
+            DESCRIPCION,
+            IMAGEN
+        FROM
+            RESIDENCIALES
+        WHERE
+            DELETED_AT IS NULL
+            AND ID = :id", ["id" => $id_residencial]))->first();
+
+        $bloques = DB::select("SELECT
+            BR.ID,
+            B.NOMBRE BLOQUE,
+            COUNT(L.ID) LOTES
+        FROM
+            BLOQUES B
+            JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
+            LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
+        WHERE
+            BR.ID_RESIDENCIAL = :id
+            AND BR.DELETED_AT IS NULL
+            AND L.DELETED_AT IS NULL
+        GROUP BY
+	        BR.ID,
+            B.NOMBRE
+        ORDER BY
+            B.NOMBRE", ["id" => $id_residencial]);
+
+        return view('terranova.residenciales.bloques')
+        ->with('residencial', $residencial)
+        ->with('bloques', $bloques);
     }
 }

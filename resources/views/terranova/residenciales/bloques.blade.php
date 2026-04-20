@@ -3,51 +3,12 @@
 @push('plugin-styles')
     <link href="{{ asset('assets/plugins/cropperjs/cropper.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/plugins/dropzone/dropzone.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/easymde/easymde.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 @endpush
 
 @section('content')
-    <style>
-        .file-upload {
-            border: 2px dashed #ccc;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .file-upload:hover {
-            background-color: #f9f9f9;
-        }
-
-        .file-list {
-            margin-top: 15px;
-        }
-
-        .file-item {
-            background: #f2f2f2;
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        .file-item button {
-            background: none;
-            border: none;
-            color: #d33;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-        }
-    </style>
 
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
@@ -82,7 +43,7 @@
                         <i class="text-white icon-lg pb-3px" data-feather="square"></i> Bloques Registrados
                     </h5>
                     <button type="button" class="btn btn-light btn-xs" id="btn_agregar_residencial" data-bs-toggle="modal"
-                        data-bs-target="#modal_agregar_residencial">
+                        data-bs-target="#modal_agregar_bloque">
                         <i data-feather="plus" width="16" height="16"></i> Registrar Bloque
                     </button>
                 </div>
@@ -102,15 +63,14 @@
                                     <tr style="font-size: small">
                                         <td scope="row">{{ $row->id }}</td>
                                         <td scope="row">
-                                            <button type="button" class="btn btn-primary btn-icon-text">
-                                                {{ $row->bloque }}
-                                            </button>
+                                            
+                                            <h4><span class="badge bg-primary">{{ $row->bloque }}</span></h4>
                                         </td>
                                         <td scope="row">{{ $row->lotes }}</td>
                                         <td scope="row">
                                             <button type="button" class="btn btn-danger btn-xs"
                                                 data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque"
-                                                data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}"
+                                                data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}">
                                                 <i data-feather="trash-2" width="16" height="16"></i> Eliminar
                                             </button>
                                             <a href="{{ url('residenciales/' . $row->id . '/bloques') }}" class="btn btn-success btn-xs" role="button" aria-pressed="true">
@@ -127,13 +87,13 @@
         </div>
     </div>
 
-    <div class="modal fade bd-example modal_agregar_residencial" id="modal_agregar_residencial" tabindex="-1"
+    <div class="modal fade bd-example modal_agregar_bloque" id="modal_agregar_bloque" tabindex="-1"
         aria-labelledby="mySmallModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-dark">
                     <h6 class="modal-title h6 text-white" id="myExtraLargeModalLabel"><i class="icon-lg pb-3px"
-                            data-feather="plus"></i> Registrar Nueva Residencial</h6>
+                            data-feather="plus"></i> Registrar Nuevo Bloque</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
                 <div class="card-body">
@@ -141,50 +101,77 @@
                         <div class="card-body">
                             <div class="col-lg-12">
                                 <div class="row">
-                                    <div class="col-md-10" id="div_modal_agregar_residencial_nombre">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_residencial_nombre" class="form-label">Nombre</label>
-                                            <input id="modal_agregar_residencial_nombre" class="form-control"
-                                                type="text" placeholder="Nombre de la residencial..." />
+                                            <label for="modal_agregar_bloque_nombre" class="form-label">Siguiente Bloque</label>
+                                            <button type="button" class="btn btn-primary form-control">J</button>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
-                                        <div class="mb-3" id="div_modal_agregar_residencial_bloques">
-                                            <label for="modal_agregar_residencial_bloques" class="form-label">Cantidad de
-                                                Bloques</label>
-                                            <input id="modal_agregar_residencial_bloques" class="form-control"
-                                                type="number" placeholder="¿Cuantos bloques?" />
+                                    <div class="col-md-4">
+                                        <div class="mb-3" id="div_modal_agregar_bloque_cantidad_lotes">
+                                            <label for="modal_agregar_bloque_cantidad_lotes" class="form-label">Cantidad de
+                                                Lotes</label>
+                                            <input id="modal_agregar_bloque_cantidad_lotes" class="form-control"
+                                                type="number" placeholder="¿Cuantos lotes?" />
                                         </div>
                                     </div>
-                                    <div class="col-md-12">
+                                    <div class="col-md-4">
+                                        <div class="mb-3" id="div_modal_agregar_bloque_precio_lotes">
+                                            <label for="modal_agregar_bloque_precio_lotes" class="form-label">Precio de
+                                                Lotes</label>
+                                            <input id="modal_agregar_bloque_precio_lotes" class="form-control"
+                                                type="number" placeholder="¿Cual es el precio?" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center my-4">
+                                    <hr class="flex-grow-1 border-secondary">
+                                        <span class="px-3 text-secondary">Colindancias</span>
+                                    <hr class="flex-grow-1 border-secondary">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-3">
                                         <div class="mb-3">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <label for="modal_agregar_residencial_descripcion"
-                                                    class="form-label">Descripción</label>
-                                            </div>
-                                            <textarea class="form-control" name="tinymce" id="modal_agregar_residencial_descripcion" rows="4"
-                                                placeholder="Escriba aquí..."></textarea>
+                                            <label for="modal_agregar_bloque_norte" class="form-label">Norte <span class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_norte" class="form-control"
+                                                type="number" placeholder="Ejm: 100" />
                                         </div>
                                     </div>
-                                    <div class="col-md-12 stretch-card grid-margin grid-margin-md-0">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <label class="form-label">Imagen de la Residencial <small
-                                                        class="text-muted">(Opcional)</small></label>
-                                                <div class="form-check form-switch m-0" id="checkbox_cambiar_imagen">
-                                                    <input type="checkbox" class="form-check-input"
-                                                        id="formSwitch1_cambiar_imagen"
-                                                        name="formSwitch1_cambiar_imagen" />
-                                                    <label class="form-check-label"
-                                                        for="formSwitch1_cambiar_imagen">Cambiar Imagen</label>
-                                                </div>
-                                            </div>
-                                            <div class="file-upload" id="fileUpload">
-                                                <p>Arrastra o haz clic para seleccionar la imagen</p>
-                                                <input type="file" id="inputArchivos" accept="image/*" hidden>
-                                            </div>
-
-                                            <div id="fileList" class="file-list"></div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="modal_agregar_bloque_sur" class="form-label">Sur <span class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_sur" class="form-control"
+                                                type="number" placeholder="Ejm: 100" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="modal_agregar_bloque_este" class="form-label">Este <span class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_este" class="form-control"
+                                                type="number" placeholder="Ejm: 100" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="modal_agregar_bloque_oeste" class="form-label">Oeste <span class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_oeste" class="form-control"
+                                                type="number" placeholder="Ejm: 100" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="modal_agregar_bloque_area" class="form-label">Area <span class="text-muted">m²</span></label>
+                                            <input id="modal_agregar_bloque_area" class="form-control"
+                                                type="number" placeholder="Ejm: 100" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="modal_agregar_bloque_financiamiento" class="form-label">Años de financiamiento</label>
+                                            <input id="modal_agregar_bloque_financiamiento" class="form-control"
+                                                type="number" placeholder="¿Cuántos años?" />
                                         </div>
                                     </div>
                                 </div>
@@ -247,7 +234,6 @@
     <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
     <script src="{{ asset('assets/plugins/easymde/easymde.min.js') }}"></script>
-    <script src="{{ asset('assets/plugins/dropzone/dropzone.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 @endpush
@@ -255,7 +241,6 @@
 @push('custom-scripts')
     <script src="{{ asset('assets/js/cropper.js') }}"></script>
     <script src="{{ asset('assets/js/data-table.js') }}"></script>
-    <script src="{{ asset('assets/js/dropzone.js') }}"></script>
     <script src="{{ asset('assets/js/tinymce.js') }}"></script>
     <script src="{{ asset('assets/js/easymde.js') }}"></script>
     <script src="{{ asset('assets/js/alertas_propias.js') }}"></script>
@@ -330,7 +315,6 @@
                 if (!data) return;
                 rowNumber = parseInt(row.index());
                 accion = 2;
-                $("#fileUpload").hide();
                 table.$('tr.selected').removeClass('selected');
                 $(this).addClass('selected');
                 localStorage.setItem("tbl_bloques_id_seleccionar", data[0]);
@@ -339,37 +323,26 @@
         });
 
         $("#btn_agregar_residencial").on("click", function() {
-            $("#div_modal_agregar_residencial_bloques").show();
+            $("#div_modal_agregar_bloque_cantidad_lotes").show();
             $("#checkbox_cambiar_imagen").hide();
             $("#fileUpload").show();
-            $('#div_modal_agregar_residencial_nombre').removeClass('col-md-12').addClass('col-md-10');
+            $('#div_modal_agregar_bloque_nombre').removeClass('col-md-12').addClass('col-md-10');
             accion = 1;
         });
 
-        $('input[name="formSwitch1_cambiar_imagen"]').on('change', function() {
-            if ($('#formSwitch1_cambiar_imagen').is(':checked')) {
-                $('#fileUpload').show();
-            } else {
-                $('#fileUpload').hide();
-                eliminarArchivo()
-            }
-        });
-
-        $("#modal_agregar_residencial").on("show.bs.modal", function(e) {
+        $("#modal_agregar_bloque").on("show.bs.modal", function(e) {
             $('#formSwitch1_cambiar_imagen').prop('checked', false);
-            $("#div_modal_agregar_residencial_bloques").hide();
+            $("#div_modal_agregar_bloque_cantidad_lotes").hide();
             $("#checkbox_cambiar_imagen").show();
-            $('#div_modal_agregar_residencial_nombre').removeClass('col-md-10').addClass('col-md-12');
-            $('#fileUpload').hide();
-            eliminarArchivo()
+            $('#div_modal_agregar_bloque_nombre').removeClass('col-md-10').addClass('col-md-12');
             var triggerLink = $(e.relatedTarget);
             id = triggerLink.data("id");
             nombre = triggerLink.data("nombre");
             descripcion = triggerLink.data("descripcion");
             archivoSeleccionado = null;
-            $("#modal_agregar_residencial_nombre").val(nombre);
-            $("#modal_agregar_residencial_bloques").val('');
-            $("#modal_agregar_residencial_descripcion").val(descripcion);
+            $("#modal_agregar_bloque_nombre").val(nombre);
+            $("#modal_agregar_bloque_cantidad_lotes").val('');
+            $("#modal_agregar_bloque_precio_lotes").val(descripcion);
         });
 
         $("#modal_eliminar_bloque").on("show.bs.modal", function(e) {
@@ -387,80 +360,10 @@
             }
         });
 
-        const inputArchivos = document.getElementById('inputArchivos');
-        const fileUpload = document.getElementById('fileUpload');
-        const fileList = document.getElementById('fileList');
-
-
-        // Abrir selector
-        fileUpload.addEventListener('click', () => inputArchivos.click());
-
-        // Drag & Drop
-        fileUpload.addEventListener('dragover', e => {
-            e.preventDefault();
-            fileUpload.style.backgroundColor = '#eef';
-        });
-
-        fileUpload.addEventListener('dragleave', () => {
-            fileUpload.style.backgroundColor = '';
-        });
-
-        fileUpload.addEventListener('drop', e => {
-            e.preventDefault();
-            fileUpload.style.backgroundColor = '';
-            manejarArchivo(e.dataTransfer.files);
-        });
-
-        // Selección manual
-        inputArchivos.addEventListener('change', e => manejarArchivo(e.target.files));
-
-        // 🔥 Nueva función (solo 1 archivo)
-        function manejarArchivo(files) {
-            const file = files[0]; // solo el primero
-
-            if (!file) return;
-
-            // Validar que sea imagen
-            if (!file.type.startsWith('image/')) {
-                alert('Solo se permiten imágenes');
-                inputArchivos.value = '';
-                return;
-            }
-
-            // Reemplaza el archivo anterior
-            archivoSeleccionado = file;
-
-            mostrarArchivo();
-        }
-
-        // Mostrar archivo
-        function mostrarArchivo() {
-            fileList.innerHTML = '';
-
-            if (!archivoSeleccionado) return;
-
-            const item = document.createElement('div');
-            item.className = 'file-item';
-
-            item.innerHTML = `
-            <span>${archivoSeleccionado.name} (${(archivoSeleccionado.size/1024).toFixed(1)} KB)</span>
-            <button onclick="eliminarArchivo()">&times;</button>
-        `;
-
-            fileList.appendChild(item);
-        }
-
-        // Eliminar archivo
-        function eliminarArchivo() {
-            archivoSeleccionado = null;
-            inputArchivos.value = '';
-            mostrarArchivo();
-        }
-
         $("#btn_guardar_residencial").on("click", function() {
-            nombre = $("#modal_agregar_residencial_nombre").val();
-            bloques = $("#modal_agregar_residencial_bloques").val();
-            descripcion = $("#modal_agregar_residencial_descripcion").val();
+            nombre = $("#modal_agregar_bloque_nombre").val();
+            bloques = $("#modal_agregar_bloque_cantidad_lotes").val();
+            descripcion = $("#modal_agregar_bloque_precio_lotes").val();
             if ($('#formSwitch1_cambiar_imagen').is(':checked')) {
                 cambiar_imagen = true;
             } else {
@@ -563,7 +466,7 @@
 
                                     // EDITAR
                                     '<button type="button" class="btn btn-warning btn-xs btn_editar_rol" ' +
-                                    'data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial" ' +
+                                    'data-bs-toggle="modal" data-bs-target=".modal_agregar_bloque" ' +
                                     'data-id="' + row.id + '" ' +
                                     'data-nombre="' + row.nombre + '" ' +
                                     'data-descripcion="' + row.descripcion + '">' +
@@ -597,7 +500,7 @@
                             table.row(rowNumber).remove().draw();
                             $("#modal_eliminar_bloque").modal("hide");
                         }
-                        $("#modal_agregar_residencial").modal("hide");
+                        $("#modal_agregar_bloque").modal("hide");
                         btn_activo = true;
                     }
                     //console.log(textMsg);

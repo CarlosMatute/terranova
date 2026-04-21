@@ -175,21 +175,27 @@ class ResidencialesController extends Controller
 
         $bloques = DB::select("SELECT
             BR.ID,
-            B.NOMBRE BLOQUE,
-            COUNT(L.ID) LOTES
+            B.NOMBRE AS BLOQUE,
+            COUNT(L.ID) AS LOTES,
+            (
+                ROW_NUMBER() OVER (
+                    ORDER BY
+                        B.NOMBRE DESC
+                ) = 1
+            ) AS ULTIMO
         FROM
             BLOQUES B
             JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
             LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
+            AND L.DELETED_AT IS NULL
         WHERE
             BR.ID_RESIDENCIAL = :id
             AND BR.DELETED_AT IS NULL
-            AND L.DELETED_AT IS NULL
         GROUP BY
-	        BR.ID,
+            BR.ID,
             B.NOMBRE
         ORDER BY
-            B.NOMBRE", ["id" => $id_residencial]);
+            B.NOMBRE;", ["id" => $id_residencial]);
 
         $bloque_siguiente = collect(\DB::select("SELECT
             ID,
@@ -233,6 +239,7 @@ class ResidencialesController extends Controller
         $financiamiento = $request->financiamiento;
         $accion = $request->accion;
         $bloques_list = null;
+        $bloque_anterior = null;
         $bloque_siguiente = null;
         $msgSuccess = null;
         $msgError = null;
@@ -302,6 +309,44 @@ class ResidencialesController extends Controller
                     "id" => $id
                 ]);
 
+                $bloque_anterior = collect(\DB::select("WITH
+                    ACTUAL AS (
+                        SELECT
+                            B.NOMBRE
+                        FROM
+                            BLOQUES B
+                            JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
+                        WHERE
+                            BR.ID = :id
+                    )
+                SELECT
+                    BR.ID,
+                    B.NOMBRE AS BLOQUE,
+                    COUNT(L.ID) AS LOTES
+                FROM
+                    BLOQUES B
+                    JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
+                    LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
+                    AND L.DELETED_AT IS NULL
+                WHERE
+                    BR.ID_RESIDENCIAL = 1
+                    AND BR.DELETED_AT IS NULL
+                    AND B.NOMBRE < (
+                        SELECT
+                            NOMBRE
+                        FROM
+                            ACTUAL
+                    )
+                GROUP BY
+                    BR.ID,
+                    B.NOMBRE
+                ORDER BY
+                    B.NOMBRE DESC
+                LIMIT
+                    1;", [
+                    "id" => $id
+                ]))->first();
+
                 $msgSuccess = "Bloque eliminado exitosamente.";
             }else{  
                  throw new Exception("Acción no válida.");
@@ -356,6 +401,7 @@ class ResidencialesController extends Controller
             "msgSuccess" => $msgSuccess,
             "msgError" => $msgError,
             "bloques_list" => $bloques_list,    
+            "bloque_anterior" => $bloque_anterior,    
             "bloque_siguiente" => $bloque_siguiente
         ]);
     

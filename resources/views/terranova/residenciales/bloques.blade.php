@@ -68,11 +68,13 @@
                                         </td>
                                         <td scope="row">{{ $row->lotes }}</td>
                                         <td scope="row">
-                                            <button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal"
-                                                data-bs-target=".modal_eliminar_bloque" data-id="{{ $row->id }}"
-                                                data-bloque="{{ $row->bloque }}">
-                                                <i data-feather="trash-2" width="16" height="16"></i> Eliminar
-                                            </button>
+                                            @if ($row->ultimo)
+                                                <button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal"
+                                                    data-bs-target=".modal_eliminar_bloque" data-id="{{ $row->id }}"
+                                                    data-bloque="{{ $row->bloque }}">
+                                                    <i data-feather="trash-2" width="16" height="16"></i> Eliminar
+                                                </button>
+                                            @endif
                                             <a href="{{ url('residenciales/' . $row->id . '/bloques') }}"
                                                 class="btn btn-success btn-xs" role="button" aria-pressed="true">
                                                 <i data-feather="log-in" width="16" height="16"></i> Lotes
@@ -362,7 +364,8 @@
             var triggerLink = $(e.relatedTarget);
             id = triggerLink.data("id");
             bloque = triggerLink.data("bloque");
-            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-primary">' + bloque + '</span></h4>');
+            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-primary">' + bloque +
+                '</span></h4>');
         });
 
         $(".modal-footer").on("click", "#btn_eliminar_bloque", function() {
@@ -473,7 +476,6 @@
                     accion: accion
                 },
                 success: function(data) {
-                    console.log(data.msgError);
                     if (data.msgError != null) {
                         titleMsg = "Error al Guardar";
                         textMsg = data.msgError;
@@ -487,45 +489,60 @@
                         typeMsg = "success";
                         timer = 2000;
 
-                        var bloque_siguiente = data.bloque_siguiente;
-                        $("#modal_agregar_bloque_siguiente").html(bloque_siguiente.nombre);
-                        id_bloque_siguiente = bloque_siguiente.id;
-                        console.log(bloque_siguiente.nombre);
-
+                        var bloque_siguiente_list = data.bloque_siguiente;
+                        bloque_siguiente = bloque_siguiente_list.nombre;
+                        $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
+                        id_bloque_siguiente = bloque_siguiente_list.id;
+                        var agregarBotonDT = null;
+                        var row = data.bloques_list;
+                        
                         if (accion == 1 || accion == 2) {
-                            var row = data.residenciales_list;
                             var nuevaFilaDT = [
                                 row.id,
-                                row.bloque,
+                                '<h4><span class="badge bg-primary">' + row.bloque + '</span></h4>',
                                 row.lotes,
 
                                 '<div class="d-flex gap-1">' +
 
-                                    // ELIMINAR
-                                    '<button type="button" class="btn btn-danger btn-xs" ' +
-                                    'data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" ' +
-                                    'data-id="' + row.id + '" ' +
-                                    'data-nombre="' + row.nombre + '" ' +
-                                        '<i data-feather="trash-2" width="14" height="14"></i> Eliminar' +
-                                    '</button> ' +
+                                '<button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" data-id="' +
+                                row.id + '" data-bloque="' + row.bloque + '">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> Eliminar' +
+                                '</button>' +
 
-                                    // ENTRAR
-                                    '<a href="residenciales/' + row.id + '/bloques" ' +
-                                    'class="btn btn-dark btn-xs">' +
-                                        '<i data-feather="log-in" width="14" height="14"></i> Entrar' +
-                                    '</a>' +
-
+                                '<a href="http://localhost/terranova/public/residenciales/6/bloques" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Lotes' +
+                                '</a>' +
                                 '</div>'
                             ];
-                            }
+                        }
+                        if (accion == 1) {
+                            table.row.add(nuevaFilaDT).draw();
+                            var filas = table.rows().count();
+                            table.cell(filas - 2, 3).data('probando').draw();
+                        } else if (accion == 2) {
+                            table.row(rowNumber).data(nuevaFilaDT);
+                        } else if (accion == 3) {
 
-                            if (accion == 1) {
-                                table.row.add(nuevaFilaDT).draw();
-                            } else if (accion == 2) {
-                                table.row(rowNumber).data(nuevaFilaDT);
-                            } else if (accion == 3) {
-                                table.row(rowNumber).remove().draw();
-                                $("#modal_eliminar_bloque").modal("hide");
+                            var bloque_anterior_list = data.bloque_anterior;
+                            console.log(bloque_anterior_list.bloque);
+                            agregarBotonDT = [
+                                '<div class="d-flex gap-1">' +
+
+                                '<button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" data-id="' +
+                                bloque_anterior_list.id + '" data-bloque="' + bloque_anterior_list.bloque +
+                                '">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> Eliminar' +
+                                '</button>' +
+
+                                '<a href="http://localhost/terranova/public/residenciales/6/bloques" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Lotes' +
+                                '</a>' +
+                                '</div>'
+                            ];
+
+                            table.row(rowNumber).remove().draw();
+                            table.cell(rowNumber - 1, 3).data(agregarBotonDT).draw();
+                            $("#modal_eliminar_bloque").modal("hide");
                         }
                         $("#modal_agregar_bloque").modal("hide");
                         btn_activo = true;

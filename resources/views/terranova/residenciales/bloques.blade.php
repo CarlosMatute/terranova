@@ -9,7 +9,6 @@
 @endpush
 
 @section('content')
-
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url('residenciales') }}">Residenciales</a></li>
@@ -22,14 +21,16 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-start">
-                        <img src="{{ asset('storage/residenciales/res_' . $residencial->id . '/' . $residencial->imagen) }}" class="wd-90 ht-90 me-3" alt="..." onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
+                        <img src="{{ asset('storage/residenciales/res_' . $residencial->id . '/' . $residencial->imagen) }}"
+                            class="wd-90 ht-90 me-3" alt="..."
+                            onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
                         <div>
                             <h5 class="mb-2">Residencial: {{ $residencial->nombre }}</h5>
                             <p class="text-muted">{{ $residencial->descripcion }}</p>
                         </div>
                     </div>
                     <hr>
-                            <p>En este módulo puede registrar y administrar todos los bloques de la residencial seleccionada.</p>
+                    <p>En este módulo puede registrar y administrar todos los bloques de la residencial seleccionada.</p>
                 </div>
             </div>
         </div>
@@ -42,7 +43,7 @@
                     <h5 class="text-white mb-0">
                         <i class="text-white icon-lg pb-3px" data-feather="square"></i> Bloques Registrados
                     </h5>
-                    <button type="button" class="btn btn-light btn-xs" id="btn_agregar_residencial" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-light btn-xs" id="btn_agregar_bloque" data-bs-toggle="modal"
                         data-bs-target="#modal_agregar_bloque">
                         <i data-feather="plus" width="16" height="16"></i> Registrar Bloque
                     </button>
@@ -63,17 +64,17 @@
                                     <tr style="font-size: small">
                                         <td scope="row">{{ $row->id }}</td>
                                         <td scope="row">
-                                            
                                             <h4><span class="badge bg-primary">{{ $row->bloque }}</span></h4>
                                         </td>
                                         <td scope="row">{{ $row->lotes }}</td>
                                         <td scope="row">
-                                            <button type="button" class="btn btn-danger btn-xs"
-                                                data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque"
-                                                data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}">
+                                            <button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal"
+                                                data-bs-target=".modal_eliminar_bloque" data-id="{{ $row->id }}"
+                                                data-bloque="{{ $row->bloque }}">
                                                 <i data-feather="trash-2" width="16" height="16"></i> Eliminar
                                             </button>
-                                            <a href="{{ url('residenciales/' . $row->id . '/bloques') }}" class="btn btn-success btn-xs" role="button" aria-pressed="true">
+                                            <a href="{{ url('residenciales/' . $row->id . '/bloques') }}"
+                                                class="btn btn-success btn-xs" role="button" aria-pressed="true">
                                                 <i data-feather="log-in" width="16" height="16"></i> Lotes
                                             </a>
                                         </td>
@@ -103,13 +104,16 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_nombre" class="form-label">Siguiente Bloque</label>
-                                            <button type="button" class="btn btn-primary form-control">J</button>
+                                            <label for="modal_agregar_bloque_nombre" class="form-label">Siguiente
+                                                Bloque</label>
+                                            <button type="button" class="btn btn-primary form-control"
+                                                id="modal_agregar_bloque_siguiente"></button>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="mb-3" id="div_modal_agregar_bloque_cantidad_lotes">
-                                            <label for="modal_agregar_bloque_cantidad_lotes" class="form-label">Cantidad de
+                                            <label for="modal_agregar_bloque_cantidad_lotes" class="form-label">Cantidad
+                                                de
                                                 Lotes</label>
                                             <input id="modal_agregar_bloque_cantidad_lotes" class="form-control"
                                                 type="number" placeholder="¿Cuantos lotes?" />
@@ -126,50 +130,56 @@
                                 </div>
                                 <div class="d-flex align-items-center my-4">
                                     <hr class="flex-grow-1 border-secondary">
-                                        <span class="px-3 text-secondary">Colindancias</span>
+                                    <span class="px-3 text-secondary">Colindancias</span>
                                     <hr class="flex-grow-1 border-secondary">
                                 </div>
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_norte" class="form-label">Norte <span class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_norte" class="form-control"
-                                                type="number" placeholder="Ejm: 100" />
+                                            <label for="modal_agregar_bloque_norte" class="form-label">Norte <span
+                                                    class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_norte" class="form-control" type="number"
+                                                placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_sur" class="form-label">Sur <span class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_sur" class="form-control"
-                                                type="number" placeholder="Ejm: 100" />
+                                            <label for="modal_agregar_bloque_sur" class="form-label">Sur <span
+                                                    class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_sur" class="form-control" type="number"
+                                                placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_este" class="form-label">Este <span class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_este" class="form-control"
-                                                type="number" placeholder="Ejm: 100" />
+                                            <label for="modal_agregar_bloque_este" class="form-label">Este <span
+                                                    class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_este" class="form-control" type="number"
+                                                placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_oeste" class="form-label">Oeste <span class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_oeste" class="form-control"
-                                                type="number" placeholder="Ejm: 100" />
+                                            <label for="modal_agregar_bloque_oeste" class="form-label">Oeste <span
+                                                    class="text-muted">m</span></label>
+                                            <input id="modal_agregar_bloque_oeste" class="form-control" type="number"
+                                                placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_area" class="form-label">Area <span class="text-muted">m²</span></label>
-                                            <input id="modal_agregar_bloque_area" class="form-control"
-                                                type="number" placeholder="Ejm: 100" />
+                                            <label for="modal_agregar_bloque_area" class="form-label">Area <span
+                                                    class="text-muted">m²</span></label>
+                                            <input id="modal_agregar_bloque_area" class="form-control" type="number"
+                                                placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_financiamiento" class="form-label">Años de financiamiento</label>
+                                            <label for="modal_agregar_bloque_financiamiento" class="form-label">Años de
+                                                financiamiento</label>
                                             <input id="modal_agregar_bloque_financiamiento" class="form-control"
                                                 type="number" placeholder="¿Cuántos años?" />
                                         </div>
@@ -180,8 +190,10 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_residencial"><i data-feather="save" width="16" height="16"></i> Guardar</button>
+                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x"
+                            width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_bloque"><i data-feather="save"
+                            width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
         </div>
@@ -206,10 +218,10 @@
                                     <div class="col-sm-12">
                                         <div class="mb-3">
                                             <h4><label class="form-label"><strong>¿Realmente deseas eliminar este
-                                                        registro?</strong></label></h4>
+                                                        bloque?</strong></label></h4>
                                             <br>
-                                            <h5><label class="form-label"
-                                                    id="modal_eliminar_bloque_informacion"></label></h5>
+                                            <h5><label class="form-label" id="modal_eliminar_bloque_informacion"></label>
+                                            </h5>
                                             <br>
                                             <p class="fw-normal">Este proceso no se puede revertir</p>
                                         </div>
@@ -221,8 +233,10 @@
                     </div>
                 </div>
                 <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_eliminar_residencial"><i data-feather="trash-2" width="16" height="16"></i> Eliminar</button>
+                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x"
+                            width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-primary btn-xs" id="btn_eliminar_bloque"><i
+                            data-feather="trash-2" width="16" height="16"></i> Eliminar</button>
                 </div>
             </div>
         </div>
@@ -251,14 +265,19 @@
         var accion = null;
         var btn_activo = true;
         var id = null;
-        var nombre = null;
-        var bloques = null;
-        var descripcion = null;
-        var id_pagina = null;
-        var id_permiso_requisito = null;
-        var archivoSeleccionado = null;
-        var cambiar_imagen = false;
-        var url_guardar_residencial = "{{ url('/residenciales/guardar') }}";
+        var bloque = null;
+        var id_residencial = {{ $residencial->id }};
+        var cantidad_lotes = null;
+        var precio_lote = null;
+        var norte = null;
+        var sur = null;
+        var este = null;
+        var oeste = null;
+        var area = null;
+        var financiamiento = null;
+        var bloque_siguiente = '{{ $bloque_siguiente->nombre }}';
+        var id_bloque_siguiente = {{ $bloque_siguiente->id }};
+        var url_guardar_bloque = "{{ url('/residenciales/bloques/guardar') }}";
         var rowNumber = null;
         var id_seleccionar = localStorage.getItem("tbl_bloques_id_seleccionar");
         $(document).ready(function() {
@@ -322,116 +341,139 @@
 
         });
 
-        $("#btn_agregar_residencial").on("click", function() {
-            $("#div_modal_agregar_bloque_cantidad_lotes").show();
-            $("#checkbox_cambiar_imagen").hide();
-            $("#fileUpload").show();
-            $('#div_modal_agregar_bloque_nombre').removeClass('col-md-12').addClass('col-md-10');
+        $("#btn_agregar_bloque").on("click", function() {
+            $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
             accion = 1;
         });
 
         $("#modal_agregar_bloque").on("show.bs.modal", function(e) {
-            $('#formSwitch1_cambiar_imagen').prop('checked', false);
-            $("#div_modal_agregar_bloque_cantidad_lotes").hide();
-            $("#checkbox_cambiar_imagen").show();
-            $('#div_modal_agregar_bloque_nombre').removeClass('col-md-10').addClass('col-md-12');
-            var triggerLink = $(e.relatedTarget);
-            id = triggerLink.data("id");
-            nombre = triggerLink.data("nombre");
-            descripcion = triggerLink.data("descripcion");
-            archivoSeleccionado = null;
-            $("#modal_agregar_bloque_nombre").val(nombre);
+            $("#modal_agregar_bloque_nombre").val('');
             $("#modal_agregar_bloque_cantidad_lotes").val('');
-            $("#modal_agregar_bloque_precio_lotes").val(descripcion);
+            $("#modal_agregar_bloque_precio_lotes").val('');
+            $("#modal_agregar_bloque_norte").val('');
+            $("#modal_agregar_bloque_sur").val('');
+            $("#modal_agregar_bloque_este").val('');
+            $("#modal_agregar_bloque_oeste").val('');
+            $("#modal_agregar_bloque_area").val('');
+            $("#modal_agregar_bloque_financiamiento").val('');
         });
 
         $("#modal_eliminar_bloque").on("show.bs.modal", function(e) {
             var triggerLink = $(e.relatedTarget);
             id = triggerLink.data("id");
-            nombre = triggerLink.data("nombre");
-            descripcion = triggerLink.data("descripcion");
-            $("#modal_eliminar_bloque_informacion").html(nombre);
+            bloque = triggerLink.data("bloque");
+            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-primary">' + bloque + '</span></h4>');
         });
 
-        $(".modal-footer").on("click", "#btn_eliminar_residencial", function() {
+        $(".modal-footer").on("click", "#btn_eliminar_bloque", function() {
             accion = 3;
             if (btn_activo) {
-                guardar_residencial();
+                guardar_bloque();
             }
         });
 
-        $("#btn_guardar_residencial").on("click", function() {
-            nombre = $("#modal_agregar_bloque_nombre").val();
-            bloques = $("#modal_agregar_bloque_cantidad_lotes").val();
-            descripcion = $("#modal_agregar_bloque_precio_lotes").val();
-            if ($('#formSwitch1_cambiar_imagen').is(':checked')) {
-                cambiar_imagen = true;
-            } else {
-                cambiar_imagen = false;
-            }
+        $("#btn_guardar_bloque").on("click", function() {
+            cantidad_lotes = $("#modal_agregar_bloque_cantidad_lotes").val();
+            precio_lote = $("#modal_agregar_bloque_precio_lotes").val();
+            norte = $("#modal_agregar_bloque_norte").val();
+            sur = $("#modal_agregar_bloque_sur").val();
+            este = $("#modal_agregar_bloque_este").val();
+            oeste = $("#modal_agregar_bloque_oeste").val();
+            area = $("#modal_agregar_bloque_area").val();
+            financiamiento = $("#modal_agregar_bloque_financiamiento").val();
 
-            if (nombre == null || nombre == '') {
+            if (cantidad_lotes == null || cantidad_lotes == '' || cantidad_lotes <= 0) {
                 Toast.fire({
                     icon: 'error',
-                    title: 'Valor requerido para Nombre.'
+                    title: 'Valor requerido y mayor a cero para Cantidad de Lotes.'
                 })
                 return true;
             }
 
-            if ((bloques == null || bloques == '') && accion == 1) {
+            if ((precio_lote == null || precio_lote == '' || precio_lote <= 0)) {
                 Toast.fire({
                     icon: 'error',
-                    title: 'Valor requerido para Cantidad de Bloques.'
+                    title: 'Valor requerido y mayor a cero para Precio del Lote.'
                 })
                 return true;
             }
 
-            if ((bloques <= 0 || bloques > 26) && accion == 1) {
+            if ((norte == null || norte == '' || norte <= 0)) {
                 Toast.fire({
                     icon: 'error',
-                    title: 'Debe ingresar una cantidad entre 1 y 26 para Bloques.'
+                    title: 'Valor requerido y mayor a cero para Colindancia Norte.'
                 })
                 return true;
             }
 
-            if (descripcion == null || descripcion == '') {
+            if ((sur == null || sur == '' || sur <= 0)) {
                 Toast.fire({
                     icon: 'error',
-                    title: 'Valor requerido para Descripción.'
+                    title: 'Valor requerido y mayor a cero para Colindancia Sur.'
+                })
+                return true;
+            }
+            if ((este == null || este == '' || este <= 0)) {
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Valor requerido y mayor a cero para Colindancia Este.'
+                })
+                return true;
+            }
+            if ((oeste == null || oeste == '' || oeste <= 0)) {
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Valor requerido y mayor a cero para Colindancia Oeste.'
+                })
+                return true;
+            }
+
+            if ((area == null || area == '' || area <= 0)) {
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Valor requerido y mayor a cero para Area del Bloque.'
+                })
+                return true;
+            }
+
+            if ((financiamiento == null || financiamiento == '' || financiamiento <= 0)) {
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Valor requerido y mayor a cero para Años de Financiamiento.'
                 })
                 return true;
             }
 
             if (btn_activo) {
-                guardar_residencial();
+                guardar_bloque();
                 //alert('Función de guardar en construcción');
             }
 
         });
 
-        function guardar_residencial() {
+        function guardar_bloque() {
             //espera('Enviando tu solicitud...');
-            const formData = new FormData();
-            // Agregar otros campos
-            formData.append('accion', accion);
-            formData.append('id', id);
-            formData.append('nombre', nombre);
-            formData.append('bloques', bloques);
-            formData.append('descripcion', descripcion);
-            formData.append('cambiar_imagen', cambiar_imagen);
-            if (archivoSeleccionado) {
-                formData.append('archivoSeleccionado', archivoSeleccionado);
-            }
-
             btn_activo = false;
             //console.log([...formData.entries()]);
             $.ajax({
                 type: "post",
-                url: url_guardar_residencial,
-                data: formData,
-                processData: false, // IMPORTANTE: evita que jQuery convierta los datos a string
-                contentType: false, // IMPORTANTE: permite enviar multipart/form-data
+                url: url_guardar_bloque,
+                data: {
+                    id: id,
+                    id_residencial: id_residencial,
+                    id_bloque_siguiente: id_bloque_siguiente,
+                    cantidad_lotes: cantidad_lotes,
+                    precio_lote: precio_lote,
+                    norte: norte,
+                    sur: sur,
+                    este: este,
+                    oeste: oeste,
+                    area: area,
+                    financiamiento: financiamiento,
+                    accion: accion
+                },
                 success: function(data) {
+                    console.log(data.msgError);
                     if (data.msgError != null) {
                         titleMsg = "Error al Guardar";
                         textMsg = data.msgError;
@@ -444,41 +486,26 @@
                         textMsg = data.msgSuccess;
                         typeMsg = "success";
                         timer = 2000;
+
+                        var bloque_siguiente = data.bloque_siguiente;
+                        $("#modal_agregar_bloque_siguiente").html(bloque_siguiente.nombre);
+                        id_bloque_siguiente = bloque_siguiente.id;
+                        console.log(bloque_siguiente.nombre);
+
                         if (accion == 1 || accion == 2) {
                             var row = data.residenciales_list;
-                            var basePath = "{{ url('/') }}/storage/residenciales/res_" + row.id + "/";
                             var nuevaFilaDT = [
                                 row.id,
-
-                                '<div class="me-3">' +
-                                    '<img class="wd-30 ht-30 rounded-circle" ' +
-                                    'src="' + basePath + row.imagen + '" ' +
-                                    'alt="img" ' +
-                                    'onerror="this.onerror=null; this.src=\'' +
-                                    "{{ url('/') }}/assets/images/homes.png" + '\';">' +
-                                '</div>',
-
-                                row.nombre,
-
-                                '<div class="text-truncate" style="max-width:250px;">' + row.descripcion + '</div>',
+                                row.bloque,
+                                row.lotes,
 
                                 '<div class="d-flex gap-1">' +
-
-                                    // EDITAR
-                                    '<button type="button" class="btn btn-warning btn-xs btn_editar_rol" ' +
-                                    'data-bs-toggle="modal" data-bs-target=".modal_agregar_bloque" ' +
-                                    'data-id="' + row.id + '" ' +
-                                    'data-nombre="' + row.nombre + '" ' +
-                                    'data-descripcion="' + row.descripcion + '">' +
-                                        '<i data-feather="check-square" width="14" height="14"></i> Editar' +
-                                    '</button> ' +
 
                                     // ELIMINAR
                                     '<button type="button" class="btn btn-danger btn-xs" ' +
                                     'data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" ' +
                                     'data-id="' + row.id + '" ' +
                                     'data-nombre="' + row.nombre + '" ' +
-                                    'data-descripcion="' + row.descripcion + '">' +
                                         '<i data-feather="trash-2" width="14" height="14"></i> Eliminar' +
                                     '</button> ' +
 
@@ -490,15 +517,15 @@
 
                                 '</div>'
                             ];
-                        }
+                            }
 
-                        if (accion == 1) {
-                            table.row.add(nuevaFilaDT).draw();
-                        } else if (accion == 2) {
-                            table.row(rowNumber).data(nuevaFilaDT);
-                        } else if (accion == 3) {
-                            table.row(rowNumber).remove().draw();
-                            $("#modal_eliminar_bloque").modal("hide");
+                            if (accion == 1) {
+                                table.row.add(nuevaFilaDT).draw();
+                            } else if (accion == 2) {
+                                table.row(rowNumber).data(nuevaFilaDT);
+                            } else if (accion == 3) {
+                                table.row(rowNumber).remove().draw();
+                                $("#modal_eliminar_bloque").modal("hide");
                         }
                         $("#modal_agregar_bloque").modal("hide");
                         btn_activo = true;

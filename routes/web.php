@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/guardar', [ResidencialesController::class, 'guardar_residencial']);
         Route::get('{id_residencial}/bloques', [ResidencialesController::class, 'ver_bloques']);
         Route::post('/bloques/guardar', [ResidencialesController::class, 'guardar_bloque']);
+        Route::get('{id_residencial}/bloques/{id_bloque}', [ResidencialesController::class, 'ver_lotes']);
+        Route::post('/bloques/lotes/guardar', [ResidencialesController::class, 'guardar_lote']);
     });
 
     Route::group(['prefix' => 'email'], function(){

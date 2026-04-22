@@ -52,7 +52,7 @@
         <div class="col-md-12 grid-margin stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title">Residenciales</h4>
+                    <h3 class="mb-2">Residenciales</h3>
                     <p class="text-muted">
                         En este módulo puedes registrar y administrar todas las residenciales, sus bloques y sus lotes.
                     </p>

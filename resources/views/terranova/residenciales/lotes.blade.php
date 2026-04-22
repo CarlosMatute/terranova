@@ -12,7 +12,9 @@
     <nav class="page-breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url('residenciales') }}">Residenciales</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Bloques</li>
+            <li class="breadcrumb-item"><a
+                    href="{{ url('residenciales') }}/{{ $bloque->id_residencial }}/bloques">Bloques</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Lotes</li>
         </ol>
     </nav>
 
@@ -21,16 +23,17 @@
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-start">
-                        <img src="{{ asset('storage/residenciales/res_' . $residencial->id . '/' . $residencial->imagen) }}"
+                        <img src="{{ asset('storage/residenciales/res_' . $bloque->id_residencial . '/' . $bloque->imagen) }}"
                             class="wd-90 ht-90 me-3" alt="..."
                             onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
                         <div>
-                            <h3 class="mb-2">Residencial: {{ $residencial->nombre }}</h3>
-                            <p class="text-muted">{{ $residencial->descripcion }}</p>
+                            <h3 class="mb-2">Residencial: {{ $bloque->residencial }}</h3>
+                            <h4 class="mb-2">Bloque: <span class="badge bg-primary">{{ $bloque->bloque }}</span></h4>
+                            {{-- <p class="text-muted">{{ $bloque->descripcion }}</p> --}}
                         </div>
                     </div>
                     <hr>
-                    <p>En este módulo puede registrar y administrar todos los bloques de la residencial seleccionada.</p>
+                    <p>En este módulo puede registrar y administrar todos los lotes del bloque seleccionado.</p>
                 </div>
             </div>
         </div>
@@ -41,44 +44,52 @@
             <div class="card border-secondary">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0">
-                        <i class="text-white icon-lg pb-3px" data-feather="square"></i> Bloques Registrados
+                        <i class="text-white icon-lg pb-3px" data-feather="grid"></i> Lotes Registrados
                     </h5>
                     <button type="button" class="btn btn-light btn-xs" id="btn_agregar_bloque" data-bs-toggle="modal"
-                        data-bs-target="#modal_agregar_bloque">
-                        <i data-feather="plus" width="16" height="16"></i> Registrar Bloque
+                        data-bs-target="#modal_agregar_lote">
+                        <i data-feather="plus" width="16" height="16"></i> Registrar Lote
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="jambo_table table table-hover" id="tbl_bloques" border="1">
+                        <table class="jambo_table table table-hover" id="tbl_lotes" border="1">
                             <thead class="bg-secondary">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
-                                    <th scope="col" class="text-white">Bloque</th>
-                                    <th scope="col" class="text-white">Lotes</th>
+                                    <th scope="col" class="text-white">Lote</th>
+                                    <th scope="col" class="text-white">Area</th>
+                                    <th scope="col" class="text-white">Colindancias</th>
+                                    <th scope="col" class="text-white">Precio</th>
+                                    <th scope="col" class="text-white">Financiamiento</th>
+                                    <th scope="col" class="text-white">Estado</th>
                                     <th scope="col" class="text-white">Opciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($bloques as $row)
+                                @foreach ($lotes as $row)
                                     <tr style="font-size: small">
                                         <td scope="row">{{ $row->id }}</td>
                                         <td scope="row">
-                                            <h4><span class="badge bg-primary">{{ $row->bloque }}</span></h4>
+                                            <h4><span class="badge bg-success">{{ $row->nombre }}</span></h4>
                                         </td>
-                                        <td scope="row">{{ $row->lotes }}</td>
+                                        <td scope="row">{{ $row->area_formateado }}</td>
+                                        <td scope="row">{{ $row->colindancias }}</td>
+                                        <td scope="row">{{ $row->precio_formateado }}</td>
+                                        <td scope="row">{{ $row->anios_financiamiento_formateado }}</td>
                                         <td scope="row">
-                                            @if ($row->ultimo)
-                                                <button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal"
-                                                    data-bs-target=".modal_eliminar_bloque" data-id="{{ $row->id }}"
-                                                    data-bloque="{{ $row->bloque }}">
-                                                    <i data-feather="trash-2" width="16" height="16"></i> Eliminar
-                                                </button>
-                                            @endif
-                                            <a href="{{ url('residenciales/' . $residencial->id . '/bloques/' . $row->id) }}"
-                                                class="btn btn-success btn-xs" role="button" aria-pressed="true">
-                                                <i data-feather="grid" width="16" height="16"></i> Lotes
-                                            </a>
+                                            <h6>
+                                                @if ($row->id_cliente_reservar == null)
+                                                    <span class="badge bg-success"><i data-feather="check" width="14"
+                                                            height="14"></i> {{ $row->estado }}</span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark"><i data-feather="clock"
+                                                            width="14" height="14"></i> {{ $row->estado }}</span>
+                                                @endif
+                                            </h6>
+                                        </td>
+                                        <td scope="row">
+
                                         </td>
                                     </tr>
                                 @endforeach
@@ -90,13 +101,13 @@
         </div>
     </div>
 
-    <div class="modal fade bd-example modal_agregar_bloque" id="modal_agregar_bloque" tabindex="-1"
+    <div class="modal fade bd-example modal_agregar_lote" id="modal_agregar_lote" tabindex="-1"
         aria-labelledby="mySmallModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-dark">
                     <h6 class="modal-title h6 text-white" id="myExtraLargeModalLabel"><i class="icon-lg pb-3px"
-                            data-feather="plus"></i> Registrar Nuevo Bloque</h6>
+                            data-feather="plus"></i> @if($bloque->cantidad_lotes == 0) Registrar Lotes @else Registrar Nuevo Lote @endif</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
                 <div class="card-body">
@@ -104,31 +115,51 @@
                         <div class="card-body">
                             <div class="col-lg-12">
                                 <div class="row">
+                                    @if ($bloque->cantidad_lotes == 0)
                                     <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="modal_agregar_bloque_nombre" class="form-label">Siguiente
-                                                Bloque</label>
-                                            <button type="button" class="btn btn-primary form-control"
-                                                id="modal_agregar_bloque_siguiente"></button>
+                                            <div class="mb-3">
+                                                <label for="modal_agregar_lote_nombre" class="form-label">Registro de Lotes</label>
+                                                <button type="button" class="btn btn-success form-control"
+                                                    >Masivo</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3" id="div_modal_agregar_bloque_cantidad_lotes">
-                                            <label for="modal_agregar_bloque_cantidad_lotes" class="form-label">Cantidad
-                                                de
-                                                Lotes</label>
-                                            <input id="modal_agregar_bloque_cantidad_lotes" class="form-control"
-                                                type="number" placeholder="¿Cuantos lotes?" />
+                                        <div class="col-md-4">
+                                            <div class="mb-3" id="div_modal_agregar_lote_cantidad_lotes">
+                                                <label for="modal_agregar_lote_cantidad_lotes" class="form-label">Cantidad
+                                                    de
+                                                    Lotes</label>
+                                                <input id="modal_agregar_lote_cantidad_lotes" class="form-control"
+                                                    type="number" placeholder="¿Cuantos lotes?" />
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3" id="div_modal_agregar_bloque_precio_lotes">
-                                            <label for="modal_agregar_bloque_precio_lotes" class="form-label">Precio de
-                                                Lotes</label>
-                                            <input id="modal_agregar_bloque_precio_lotes" class="form-control"
-                                                type="number" placeholder="¿Cual es el precio?" />
+                                        <div class="col-md-4">
+                                            <div class="mb-3" id="div_modal_agregar_lote_precio_lotes">
+                                                <label for="modal_agregar_lote_precio_lotes" class="form-label">Precio de los
+                                                    Lotes</label>
+                                                <input id="modal_agregar_lote_precio_lotes" class="form-control"
+                                                    type="number" placeholder="¿Cual es el precio?" />
+                                            </div>
                                         </div>
-                                    </div>
+                                    @else
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="modal_agregar_lote_nombre" class="form-label">Siguiente
+                                                    Lote</label>
+                                                <button type="button" class="btn btn-success form-control"
+                                                    id="modal_agregar_lote_siguiente"></button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="mb-3" id="div_modal_agregar_lote_precio_lotes">
+                                                <label for="modal_agregar_lote_precio_lotes" class="form-label">Precio del
+                                                    Lote</label>
+                                                <input id="modal_agregar_lote_precio_lotes" class="form-control"
+                                                    type="number" placeholder="¿Cual es el precio?" />
+                                            </div>
+                                        </div>
+                                    @endif
+
+
                                 </div>
                                 <div class="d-flex align-items-center my-4">
                                     <hr class="flex-grow-1 border-secondary">
@@ -138,33 +169,33 @@
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_norte" class="form-label">Norte <span
+                                            <label for="modal_agregar_lote_norte" class="form-label">Norte <span
                                                     class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_norte" class="form-control" type="number"
+                                            <input id="modal_agregar_lote_norte" class="form-control" type="number"
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_sur" class="form-label">Sur <span
+                                            <label for="modal_agregar_lote_sur" class="form-label">Sur <span
                                                     class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_sur" class="form-control" type="number"
+                                            <input id="modal_agregar_lote_sur" class="form-control" type="number"
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_este" class="form-label">Este <span
+                                            <label for="modal_agregar_lote_este" class="form-label">Este <span
                                                     class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_este" class="form-control" type="number"
+                                            <input id="modal_agregar_lote_este" class="form-control" type="number"
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_oeste" class="form-label">Oeste <span
+                                            <label for="modal_agregar_lote_oeste" class="form-label">Oeste <span
                                                     class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_oeste" class="form-control" type="number"
+                                            <input id="modal_agregar_lote_oeste" class="form-control" type="number"
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
@@ -172,17 +203,17 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_area" class="form-label">Area <span
+                                            <label for="modal_agregar_lote_area" class="form-label">Area <span
                                                     class="text-muted">m²</span></label>
-                                            <input id="modal_agregar_bloque_area" class="form-control" type="number"
+                                            <input id="modal_agregar_lote_area" class="form-control" type="number"
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="modal_agregar_bloque_financiamiento" class="form-label">Años de
+                                            <label for="modal_agregar_lote_financiamiento" class="form-label">Años de
                                                 financiamiento</label>
-                                            <input id="modal_agregar_bloque_financiamiento" class="form-control"
+                                            <input id="modal_agregar_lote_financiamiento" class="form-control"
                                                 type="number" placeholder="¿Cuántos años?" />
                                         </div>
                                     </div>
@@ -267,8 +298,9 @@
         var accion = null;
         var btn_activo = true;
         var id = null;
+        var id_bloque_residencial = {{$bloque->id_bloque_residencial}};
         var bloque = null;
-        var id_residencial = {{ $residencial->id }};
+        var id_residencial = null;
         var cantidad_lotes = null;
         var precio_lote = null;
         var norte = null;
@@ -277,11 +309,10 @@
         var oeste = null;
         var area = null;
         var financiamiento = null;
-        var bloque_siguiente = '{{ $bloque_siguiente->nombre }}';
-        var id_bloque_siguiente = {{ $bloque_siguiente->id }};
-        var url_guardar_bloque = "{{ url('/residenciales/bloques/guardar') }}";
+        var lote_siguiente = '{{ $lote_siguiente->nombre }}';
+        var url_guardar_lote = "{{ url('/residenciales/bloques/lotes/guardar') }}";
         var rowNumber = null;
-        var id_seleccionar = localStorage.getItem("tbl_bloques_id_seleccionar");
+        var id_seleccionar = localStorage.getItem("tbl_lotes_id_seleccionar");
         $(document).ready(function() {
             $.ajaxSetup({
                 headers: {
@@ -289,7 +320,7 @@
                 }
             });
 
-            table = $('#tbl_bloques').DataTable({
+            table = $('#tbl_lotes').DataTable({
                 "aLengthMenu": [
                     [10, 30, 50, 100, -1],
                     [10, 30, 50, 100, "Todo"]
@@ -319,7 +350,7 @@
                     }
                 }
             });
-            $('#tbl_bloques').each(function() {
+            $('#tbl_lotes').each(function() {
                 var datatable = $(this);
                 // SEARCH - Add the placeholder for Search and Turn this into in-line form control
                 var search_input = datatable.closest('.dataTables_wrapper').find('div[id$=_filter] input');
@@ -330,7 +361,7 @@
                 length_sel.removeClass('form-control-sm');
             });
 
-            $("#tbl_bloques tbody").on("click", "tr", function() {
+            $("#tbl_lotes tbody").on("click", "tr", function() {
                 let row = table.row(this);
                 let data = row.data();
                 if (!data) return;
@@ -338,26 +369,26 @@
                 accion = 2;
                 table.$('tr.selected').removeClass('selected');
                 $(this).addClass('selected');
-                localStorage.setItem("tbl_bloques_id_seleccionar", data[0]);
+                localStorage.setItem("tbl_lotes_id_seleccionar", data[0]);
             });
 
         });
 
         $("#btn_agregar_bloque").on("click", function() {
-            $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
+            $("#modal_agregar_lote_siguiente").html(lote_siguiente);
             accion = 1;
         });
 
-        $("#modal_agregar_bloque").on("show.bs.modal", function(e) {
-            $("#modal_agregar_bloque_nombre").val('');
-            $("#modal_agregar_bloque_cantidad_lotes").val('');
-            $("#modal_agregar_bloque_precio_lotes").val('');
-            $("#modal_agregar_bloque_norte").val('');
-            $("#modal_agregar_bloque_sur").val('');
-            $("#modal_agregar_bloque_este").val('');
-            $("#modal_agregar_bloque_oeste").val('');
-            $("#modal_agregar_bloque_area").val('');
-            $("#modal_agregar_bloque_financiamiento").val('');
+        $("#modal_agregar_lote").on("show.bs.modal", function(e) {
+            $("#modal_agregar_lote_nombre").val('');
+            $("#modal_agregar_lote_cantidad_lotes").val('');
+            $("#modal_agregar_lote_precio_lotes").val('');
+            $("#modal_agregar_lote_norte").val('');
+            $("#modal_agregar_lote_sur").val('');
+            $("#modal_agregar_lote_este").val('');
+            $("#modal_agregar_lote_oeste").val('');
+            $("#modal_agregar_lote_area").val('');
+            $("#modal_agregar_lote_financiamiento").val('');
         });
 
         $("#modal_eliminar_bloque").on("show.bs.modal", function(e) {
@@ -376,14 +407,18 @@
         });
 
         $("#btn_guardar_bloque").on("click", function() {
-            cantidad_lotes = $("#modal_agregar_bloque_cantidad_lotes").val();
-            precio_lote = $("#modal_agregar_bloque_precio_lotes").val();
-            norte = $("#modal_agregar_bloque_norte").val();
-            sur = $("#modal_agregar_bloque_sur").val();
-            este = $("#modal_agregar_bloque_este").val();
-            oeste = $("#modal_agregar_bloque_oeste").val();
-            area = $("#modal_agregar_bloque_area").val();
-            financiamiento = $("#modal_agregar_bloque_financiamiento").val();
+            @if($bloque->cantidad_lotes == 0)
+            cantidad_lotes = $("#modal_agregar_lote_cantidad_lotes").val();
+            @else
+            cantidad_lotes = 1;
+            @endif
+            precio_lote = $("#modal_agregar_lote_precio_lotes").val();
+            norte = $("#modal_agregar_lote_norte").val();
+            sur = $("#modal_agregar_lote_sur").val();
+            este = $("#modal_agregar_lote_este").val();
+            oeste = $("#modal_agregar_lote_oeste").val();
+            area = $("#modal_agregar_lote_area").val();
+            financiamiento = $("#modal_agregar_lote_financiamiento").val();
 
             if (cantidad_lotes == null || cantidad_lotes == '' || cantidad_lotes <= 0) {
                 Toast.fire({
@@ -460,11 +495,11 @@
             //console.log([...formData.entries()]);
             $.ajax({
                 type: "post",
-                url: url_guardar_bloque,
+                url: url_guardar_lote,
                 data: {
                     id: id,
+                    id_bloque_residencial: id_bloque_residencial,
                     id_residencial: id_residencial,
-                    id_bloque_siguiente: id_bloque_siguiente,
                     cantidad_lotes: cantidad_lotes,
                     precio_lote: precio_lote,
                     norte: norte,
@@ -491,7 +526,7 @@
 
                         var bloque_siguiente_list = data.bloque_siguiente;
                         bloque_siguiente = bloque_siguiente_list.nombre;
-                        $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
+                        $("#modal_agregar_lote_siguiente").html(bloque_siguiente);
                         id_bloque_siguiente = bloque_siguiente_list.id;
                         var agregarBotonDT = null;
                         var row = data.bloques_list;
@@ -556,7 +591,7 @@
                             table.cell(rowNumber - 1, 3).data(agregarBotonDT).draw();
                             $("#modal_eliminar_bloque").modal("hide");
                         }
-                        $("#modal_agregar_bloque").modal("hide");
+                        $("#modal_agregar_lote").modal("hide");
                         btn_activo = true;
                     }
                     //console.log(textMsg);

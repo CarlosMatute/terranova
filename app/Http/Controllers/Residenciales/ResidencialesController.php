@@ -46,11 +46,9 @@ class ResidencialesController extends Controller
 
         DB::beginTransaction();
         try {
-            //throw new Exception($cambiar_imagen);
             if($request->hasFile('archivoSeleccionado')) {
-                $archivos = $request->file('archivoSeleccionado'); 
+                $archivos = $request->file('archivoSeleccionado');
                 $archivoSeleccionado = $archivos->getClientOriginalName();
-                //$archivos->storeAs('public/residenciales', $archivoSeleccionado);  
             }
 
             if($accion == 1){
@@ -83,7 +81,7 @@ class ResidencialesController extends Controller
                 ]);
 
                 if($request->hasFile('archivoSeleccionado')) {
-                    $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
+                    $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);
                 }
 
                 $msgSuccess = "Residencial " . $nombre . " guardada exitosamente.";
@@ -113,10 +111,10 @@ class ResidencialesController extends Controller
                         "imagen" => $archivoSeleccionado,
                         "id" => $id
                     ]);
-                    
+
                     Storage::delete('public/residenciales/res_' . $id . '/' . $img_old->imagen);
                     if($request->hasFile('archivoSeleccionado')) {
-                        $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);  
+                        $archivos->storeAs('public/residenciales/res_' . $id, $archivoSeleccionado);
                     }
                 }
                 $msgSuccess = "Residencial " . $nombre . " actualizada exitosamente.";
@@ -131,7 +129,7 @@ class ResidencialesController extends Controller
                 ]);
 
                 $msgSuccess = "Residencial " . $nombre . " eliminada exitosamente.";
-            }else{  
+            }else{
                  throw new Exception("Acción no válida.");
             }
 
@@ -246,7 +244,6 @@ class ResidencialesController extends Controller
 
         DB::beginTransaction();
         try {
-            ///throw new Exception($id_bloque_siguiente);
             if($accion == 1){
                 $bloque = collect(\DB::select("INSERT INTO
                     BLOQUES_RESIDENCIALES (ID_BLOQUE, ID_RESIDENCIAL)
@@ -288,7 +285,7 @@ class ResidencialesController extends Controller
                     GENERATE_SERIES(1, :cantidad_lotes) AS GS", [
                     "id_bloque_residencial" => $id,
                     "area" => $area,
-                    "norte" => $norte, 
+                    "norte" => $norte,
                     "sur" => $sur,
                     "este" => $este,
                     "oeste" => $oeste,
@@ -299,8 +296,8 @@ class ResidencialesController extends Controller
 
                 $msgSuccess = "Bloque guardado exitosamente.";
             } elseif($accion == 2){
-                
-                $msgSuccess = "Residencial " . $nombre . " actualizada exitosamente.";
+
+                $msgSuccess = "Bloque actualizado exitosamente.";
             }elseif($accion == 3){
                 DB::select("UPDATE
                     PUBLIC.BLOQUES_RESIDENCIALES
@@ -350,7 +347,7 @@ class ResidencialesController extends Controller
                 ]))->first();
 
                 $msgSuccess = "Bloque eliminado exitosamente.";
-            }else{  
+            }else{
                  throw new Exception("Acción no válida.");
             }
 
@@ -402,11 +399,11 @@ class ResidencialesController extends Controller
         return response()->json([
             "msgSuccess" => $msgSuccess,
             "msgError" => $msgError,
-            "bloques_list" => $bloques_list,    
-            "bloque_anterior" => $bloque_anterior,    
+            "bloques_list" => $bloques_list,
+            "bloque_anterior" => $bloque_anterior,
             "bloque_siguiente" => $bloque_siguiente
         ]);
-    
+
     }
 
     public function ver_lotes($id_residencial, $id_bloque)
@@ -455,22 +452,29 @@ class ResidencialesController extends Controller
                 ELSE L.ANIOS_FINANCIAMIENTO || ' años'
             END ANIOS_FINANCIAMIENTO_FORMATEADO,
             L.ID_CLIENTE_RESERVAR,
+            LV.ID_VENTA,
             CASE
-                WHEN L.ID_CLIENTE_RESERVAR IS NULL THEN 'Disponible'
-                ELSE 'Reservado'
+                WHEN LV.ID_VENTA IS NOT NULL THEN 'Vendido'
+                WHEN L.ID_CLIENTE_RESERVAR IS NOT NULL THEN 'Reservado'
+                ELSE 'Disponible'
             END ESTADO,
             TRIM(
-                COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') || COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') || COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || COALESCE(TRIM(C.SEGUNDO_APELLIDO || ' '), '')
+                COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') || 
+                COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') || 
+                COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
+                COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
             ) NOMBRE_COMPLETO,
-            L.RESERVADO_HASTA
+            L.RESERVADO_HASTA,
+            TO_CHAR(L.RESERVADO_HASTA, 'DD/MM/YYYY') AS RESERVADO_HASTA_FORMATEADO
         FROM
             LOTES L
             LEFT JOIN CLIENTES C ON L.ID_CLIENTE_RESERVAR = C.ID
+            LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
         WHERE
             L.DELETED_AT IS NULL
             AND L.ID_BLOQUE_RESIDENCIAL = :id
         ORDER BY
-	        ID", ["id" => $id_bloque]);
+            L.ID", ["id" => $id_bloque]);
 
         $lote_siguiente = collect(\DB::select("SELECT
             'L-'||COALESCE(MAX(L.LOTE), 0) + 1 AS NOMBRE
@@ -480,10 +484,16 @@ class ResidencialesController extends Controller
             L.DELETED_AT IS NULL
             AND L.ID_BLOQUE_RESIDENCIAL = :id;", ["id" => $id_bloque]))->first();
 
+        $clientes = DB::select("SELECT ID, PRIMER_NOMBRE || ' ' || PRIMER_APELLIDO AS NOMBRE FROM CLIENTES WHERE DELETED_AT IS NULL ORDER BY PRIMER_NOMBRE ASC");
+
+        $residencial = collect(\DB::select("SELECT ID, NOMBRE FROM RESIDENCIALES WHERE ID = :id", ["id" => $id_residencial]))->first();
+
         return view('terranova.residenciales.lotes')
         ->with('bloque', $bloque)
         ->with('lotes', $lotes)
-        ->with('lote_siguiente', $lote_siguiente);
+        ->with('lote_siguiente', $lote_siguiente)
+        ->with('clientes', $clientes)
+        ->with('residencial', $residencial);
     }
 
     public function guardar_lote(Request $request)
@@ -499,15 +509,13 @@ class ResidencialesController extends Controller
         $area = $request->area;
         $financiamiento = $request->financiamiento;
         $accion = $request->accion;
-        $bloques_list = null;
-        $bloque_anterior = null;
-        $bloque_siguiente = null;
-        $msgSuccess = null;
-        $msgError = null;
+
+        // Campos para reservación
+        $id_cliente_reservar = $request->id_cliente_reservar;
+        $reservado_hasta = $request->reservado_hasta;
 
         DB::beginTransaction();
         try {
-            //throw new Exception($accion);
             if($accion == 1){
                 if($cantidad_lotes > 1) {
                     DB::select("INSERT INTO
@@ -538,7 +546,7 @@ class ResidencialesController extends Controller
                         GENERATE_SERIES(1, :cantidad_lotes) AS GS", [
                         "id_bloque_residencial" => $id_bloque_residencial,
                         "area" => $area,
-                        "norte" => $norte, 
+                        "norte" => $norte,
                         "sur" => $sur,
                         "este" => $este,
                         "oeste" => $oeste,
@@ -589,11 +597,32 @@ class ResidencialesController extends Controller
 
                 $msgSuccess = "Lote guardado exitosamente.";
             } elseif($accion == 2){
-                
-                $msgSuccess = "Residencial " . $nombre . " actualizada exitosamente.";
+                DB::select("UPDATE
+                    PUBLIC.LOTES
+                SET
+                    PRECIO = :precio,
+                    AREA = :area,
+                    NORTE = :norte,
+                    SUR = :sur,
+                    ESTE = :este,
+                    OESTE = :oeste,
+                    ANIOS_FINANCIAMIENTO = :financiamiento,
+                    UPDATED_AT = NOW()
+                WHERE
+                    ID = :id", [
+                    "precio" => $precio_lote,
+                    "area" => $area,
+                    "norte" => $norte,
+                    "sur" => $sur,
+                    "este" => $este,
+                    "oeste" => $oeste,
+                    "financiamiento" => $financiamiento,
+                    "id" => $id
+                ]);
+                $msgSuccess = "Lote actualizado exitosamente.";
             }elseif($accion == 3){
                 DB::select("UPDATE
-                    PUBLIC.BLOQUES_RESIDENCIALES
+                    PUBLIC.LOTES
                 SET
                     DELETED_AT = NOW()
                 WHERE
@@ -601,87 +630,36 @@ class ResidencialesController extends Controller
                     "id" => $id
                 ]);
 
-                $bloque_anterior = collect(\DB::select("WITH
-                    ACTUAL AS (
-                        SELECT
-                            B.NOMBRE
-                        FROM
-                            BLOQUES B
-                            JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
-                        WHERE
-                            BR.ID = :id
-                    )
-                SELECT
-                    BR.ID,
-                    B.NOMBRE AS BLOQUE,
-                    COUNT(L.ID) AS LOTES
-                FROM
-                    BLOQUES B
-                    JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
-                    LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
-                    AND L.DELETED_AT IS NULL
+                $msgSuccess = "Lote eliminado exitosamente.";
+            }elseif($accion == 4){ // Reservar
+                DB::select("UPDATE
+                    PUBLIC.LOTES
+                SET
+                    ID_CLIENTE_RESERVAR = :id_cliente,
+                    RESERVADO_HASTA = :reservado_hasta,
+                    UPDATED_AT = NOW()
                 WHERE
-                    BR.ID_RESIDENCIAL = 1
-                    AND BR.DELETED_AT IS NULL
-                    AND B.NOMBRE < (
-                        SELECT
-                            NOMBRE
-                        FROM
-                            ACTUAL
-                    )
-                GROUP BY
-                    BR.ID,
-                    B.NOMBRE
-                ORDER BY
-                    B.NOMBRE DESC
-                LIMIT
-                    1;", [
+                    ID = :id", [
+                    "id_cliente" => $id_cliente_reservar,
+                    "reservado_hasta" => $reservado_hasta,
                     "id" => $id
-                ]))->first();
-
-                $msgSuccess = "Bloque eliminado exitosamente.";
-            }else{  
+                ]);
+                $msgSuccess = "Lote reservado exitosamente.";
+            }elseif($accion == 5){ // Quitar Reserva
+                DB::select("UPDATE
+                    PUBLIC.LOTES
+                SET
+                    ID_CLIENTE_RESERVAR = NULL,
+                    RESERVADO_HASTA = NULL,
+                    UPDATED_AT = NOW()
+                WHERE
+                    ID = :id", [
+                    "id" => $id
+                ]);
+                $msgSuccess = "Reserva quitada exitosamente.";
+            }else{
                  throw new Exception("Acción no válida.");
             }
-
-            // $bloques_list = collect(\DB::select("SELECT
-            //     BR.ID,
-            //     B.NOMBRE BLOQUE,
-            //     COUNT(L.ID) LOTES
-            // FROM
-            //     BLOQUES B
-            //     JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
-            //     LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
-            // WHERE
-            //     BR.id = :id
-            //     AND BR.DELETED_AT IS NULL
-            //     AND L.DELETED_AT IS NULL
-            // GROUP BY
-            //     BR.ID,
-            //     B.NOMBRE
-            // ORDER BY
-            //     B.NOMBRE", ["id" => $id]))->first();
-
-            // $bloque_siguiente = collect(\DB::select("SELECT
-            //     ID,
-            //     NOMBRE
-            // FROM
-            //     BLOQUES
-            // WHERE
-            //     ID = (
-            //         SELECT
-            //             B.ID
-            //         FROM
-            //             BLOQUES B
-            //             JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
-            //         WHERE
-            //             BR.ID_RESIDENCIAL = :id
-            //             AND BR.DELETED_AT IS NULL
-            //         ORDER BY
-            //             B.ID DESC
-            //         LIMIT
-            //             1
-            // ) + 1", ["id" => $id_residencial]))->first();
 
             DB::commit();
         } catch (Exception $e) {
@@ -691,11 +669,8 @@ class ResidencialesController extends Controller
 
         return response()->json([
             "msgSuccess" => $msgSuccess,
-            "msgError" => $msgError,
-            "bloques_list" => $bloques_list,    
-            "bloque_anterior" => $bloque_anterior,    
-            "bloque_siguiente" => $bloque_siguiente
+            "msgError" => $msgError
         ]);
-    
+
     }
 }

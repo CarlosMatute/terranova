@@ -1,11 +1,8 @@
 @extends('layout.master')
 
 @push('plugin-styles')
-    <link href="{{ asset('assets/plugins/cropperjs/cropper.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
-    <link href="{{ asset('assets/plugins/easymde/easymde.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 @endpush
 
 @section('content')
@@ -26,11 +23,9 @@
                             onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
                         <div>
                             <h3 class="mb-2">Residencial: {{ $residencial->nombre }}</h3>
-                            <p class="text-muted">{{ $residencial->descripcion }}</p>
+                            <p class="text-muted">Gestión de bloques para esta residencial.</p>
                         </div>
                     </div>
-                    <hr>
-                    <p>En este módulo puede registrar y administrar todos los bloques de la residencial seleccionada.</p>
                 </div>
             </div>
         </div>
@@ -62,23 +57,20 @@
                             <tbody>
                                 @foreach ($bloques as $row)
                                     <tr style="font-size: small">
-                                        <td scope="row">{{ $row->id }}</td>
-                                        <td scope="row">
-                                            <h4><span class="badge bg-primary">{{ $row->bloque }}</span></h4>
-                                        </td>
-                                        <td scope="row">{{ $row->lotes }}</td>
-                                        <td scope="row">
-                                            @if ($row->ultimo)
-                                                <button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal"
-                                                    data-bs-target=".modal_eliminar_bloque" data-id="{{ $row->id }}"
-                                                    data-bloque="{{ $row->bloque }}">
-                                                    <i data-feather="trash-2" width="16" height="16"></i> Eliminar
-                                                </button>
-                                            @endif
-                                            <a href="{{ url('residenciales/' . $residencial->id . '/bloques/' . $row->id) }}"
-                                                class="btn btn-success btn-xs" role="button" aria-pressed="true">
-                                                <i data-feather="grid" width="16" height="16"></i> Lotes
-                                            </a>
+                                        <td>{{ $row->id }}</td>
+                                        <td><h4><span class="badge bg-primary">{{ $row->bloque }}</span></h4></td>
+                                        <td>{{ $row->lotes }}</td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                @if ($row->ultimo)
+                                                    <button type="button" class="btn btn-danger btn-xs btn_eliminar_bloque" data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}">
+                                                        <i data-feather="trash-2" width="14" height="14"></i> Eliminar
+                                                    </button>
+                                                @endif
+                                                <a href="{{ url('residenciales/' . $residencial->id . '/bloques/' . $row->id) }}" class="btn btn-success btn-xs">
+                                                    <i data-feather="grid" width="14" height="14"></i> Lotes
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -90,8 +82,8 @@
         </div>
     </div>
 
-    <div class="modal fade bd-example modal_agregar_bloque" id="modal_agregar_bloque" tabindex="-1"
-        aria-labelledby="mySmallModalLabel" aria-hidden="true">
+    <!-- Modal Bloque -->
+    <div class="modal fade" id="modal_agregar_bloque" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-dark">
@@ -140,7 +132,7 @@
                                         <div class="mb-3">
                                             <label for="modal_agregar_bloque_norte" class="form-label">Norte <span
                                                     class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_norte" class="form-control" type="number" 
+                                            <input id="modal_agregar_bloque_norte" class="form-control" type="number"
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
@@ -211,34 +203,35 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-12 grid-margin">
-                            <div class="row">
-                                <center>
-                                    <i class="btn-icon-prepend text-warning" data-feather="alert-circle"
-                                        style="width: 90px; height: 90px;"></i>
-                                    <br><br>
-                                    <div class="col-sm-12">
-                                        <div class="mb-3">
-                                            <h4><label class="form-label"><strong>¿Realmente deseas eliminar este
-                                                        bloque?</strong></label></h4>
-                                            <br>
-                                            <h5><label class="form-label" id="modal_eliminar_bloque_informacion"></label>
-                                            </h5>
-                                            <br>
-                                            <p class="fw-normal">Este proceso no se puede revertir</p>
-                                        </div>
-                                    </div>
-                                </center>
-                            </div>
-                            <!-- Row -->
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Siguiente Bloque</label>
+                            <button type="button" class="btn btn-primary form-control">{{ $bloque_siguiente->nombre }}</button>
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Cantidad Lotes</label>
+                            <input id="modal_bloque_cantidad" class="form-control" type="number" value="1" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Precio x Lote</label>
+                            <input id="modal_bloque_precio" class="form-control" type="number" />
+                        </div>
+                    </div>
+                    <hr>
+                    <h6>Colindancias y Area</h6>
+                    <div class="row mt-2">
+                        <div class="col-md-3 mb-3"><label>Norte</label><input id="modal_bloque_norte" class="form-control" type="number" /></div>
+                        <div class="col-md-3 mb-3"><label>Sur</label><input id="modal_bloque_sur" class="form-control" type="number" /></div>
+                        <div class="col-md-3 mb-3"><label>Este</label><input id="modal_bloque_este" class="form-control" type="number" /></div>
+                        <div class="col-md-3 mb-3"><label>Oeste</label><input id="modal_bloque_oeste" class="form-control" type="number" /></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label>Area (m²)</label><input id="modal_bloque_area" class="form-control" type="number" /></div>
+                        <div class="col-md-6 mb-3"><label>Financiamiento (años)</label><input id="modal_bloque_finan" class="form-control" type="number" /></div>
                     </div>
                 </div>
                 <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x"
-                            width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_eliminar_bloque"><i
-                            data-feather="trash-2" width="16" height="16"></i> Eliminar</button>
+                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-primary btn-xs" id="btn_confirmar_guardar"><i data-feather="save" width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
         </div>
@@ -246,55 +239,15 @@
 @endsection
 
 @push('plugin-scripts')
-    <script src="{{ asset('assets/plugins/cropperjs/cropper.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
-    <script src="{{ asset('assets/plugins/easymde/easymde.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 @endpush
 
 @push('custom-scripts')
-    <script src="{{ asset('assets/js/cropper.js') }}"></script>
-    <script src="{{ asset('assets/js/data-table.js') }}"></script>
-    <script src="{{ asset('assets/js/tinymce.js') }}"></script>
-    <script src="{{ asset('assets/js/easymde.js') }}"></script>
-    <script src="{{ asset('assets/js/alertas_propias.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=mzutkZDE"></script>
-    <script type="text/javascript">
-        var table = null;
-        var accion = null;
-        var btn_activo = true;
-        var id = null;
-        var bloque = null;
-        var id_residencial = {{ $residencial->id }};
-        var cantidad_lotes = null;
-        var precio_lote = null;
-        var norte = null;
-        var sur = null;
-        var este = null;
-        var oeste = null;
-        var area = null;
-        var financiamiento = null;
-        var bloque_siguiente = '{{ $bloque_siguiente->nombre }}';
-        var id_bloque_siguiente = {{ $bloque_siguiente->id }};
-        var url_guardar_bloque = "{{ url('/residenciales/bloques/guardar') }}";
-        var rowNumber = null;
-        var id_seleccionar = localStorage.getItem("tbl_bloques_id_seleccionar");
+    <script>
         $(document).ready(function() {
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-
-            table = $('#tbl_bloques').DataTable({
-                "aLengthMenu": [
-                    [10, 30, 50, 100, -1],
-                    [10, 30, 50, 100, "Todo"]
-                ],
-                "iDisplayLength": 10,
+            $('#tbl_bloques').DataTable({
                 responsive: true,
                 language: {
                     processing: "Procesando...",
@@ -347,9 +300,6 @@
             $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
             accion = 1;
         });
-
-        $("#modal_agregar_bloque_norte, #modal_agregar_bloque_sur, #modal_agregar_bloque_este, #modal_agregar_bloque_oeste")
-            .on("input", calcular_area_bloque);
 
         $("#modal_agregar_bloque").on("show.bs.modal", function(e) {
             $("#modal_agregar_bloque_nombre").val('');
@@ -575,29 +525,6 @@
                     alert(xhr.responseText);
                 },
             });
-        }
-
-        function calcular_area_bloque() {
-            var norte_valor = parseFloat($("#modal_agregar_bloque_norte").val());
-            var sur_valor = parseFloat($("#modal_agregar_bloque_sur").val());
-            var este_valor = parseFloat($("#modal_agregar_bloque_este").val());
-            var oeste_valor = parseFloat($("#modal_agregar_bloque_oeste").val());
-
-            if (
-                isNaN(norte_valor) || norte_valor <= 0 ||
-                isNaN(sur_valor) || sur_valor <= 0 ||
-                isNaN(este_valor) || este_valor <= 0 ||
-                isNaN(oeste_valor) || oeste_valor <= 0
-            ) {
-                $("#modal_agregar_bloque_area").val('');
-                return;
-            }
-
-            var promedio_norte_sur = (norte_valor + sur_valor) / 2;
-            var promedio_este_oeste = (este_valor + oeste_valor) / 2;
-            var area_calculada = promedio_norte_sur * promedio_este_oeste;
-
-            $("#modal_agregar_bloque_area").val(area_calculada.toFixed(2));
         }
     </script>
 @endpush

@@ -379,6 +379,9 @@
             accion = 1;
         });
 
+        $("#modal_agregar_lote_norte, #modal_agregar_lote_sur, #modal_agregar_lote_este, #modal_agregar_lote_oeste")
+            .on("input", calcular_area_lote);
+
         $("#modal_agregar_lote").on("show.bs.modal", function(e) {
             $("#modal_agregar_lote_nombre").val('');
             $("#modal_agregar_lote_cantidad_lotes").val('');
@@ -607,6 +610,29 @@
                     alert(xhr.responseText);
                 },
             });
+        }
+
+        function calcular_area_lote() {
+            var norte_valor = parseFloat($("#modal_agregar_lote_norte").val());
+            var sur_valor = parseFloat($("#modal_agregar_lote_sur").val());
+            var este_valor = parseFloat($("#modal_agregar_lote_este").val());
+            var oeste_valor = parseFloat($("#modal_agregar_lote_oeste").val());
+
+            if (
+                isNaN(norte_valor) || norte_valor <= 0 ||
+                isNaN(sur_valor) || sur_valor <= 0 ||
+                isNaN(este_valor) || este_valor <= 0 ||
+                isNaN(oeste_valor) || oeste_valor <= 0
+            ) {
+                $("#modal_agregar_lote_area").val('');
+                return;
+            }
+
+            var promedio_norte_sur = (norte_valor + sur_valor) / 2;
+            var promedio_este_oeste = (este_valor + oeste_valor) / 2;
+            var area_calculada = promedio_norte_sur * promedio_este_oeste;
+
+            $("#modal_agregar_lote_area").val(area_calculada.toFixed(2));
         }
     </script>
 @endpush

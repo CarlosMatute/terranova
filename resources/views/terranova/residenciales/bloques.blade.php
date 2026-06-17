@@ -140,7 +140,7 @@
                                         <div class="mb-3">
                                             <label for="modal_agregar_bloque_norte" class="form-label">Norte <span
                                                     class="text-muted">m</span></label>
-                                            <input id="modal_agregar_bloque_norte" class="form-control" type="number"
+                                            <input id="modal_agregar_bloque_norte" class="form-control" type="number" 
                                                 placeholder="Ejm: 100" />
                                         </div>
                                     </div>
@@ -347,6 +347,9 @@
             $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
             accion = 1;
         });
+
+        $("#modal_agregar_bloque_norte, #modal_agregar_bloque_sur, #modal_agregar_bloque_este, #modal_agregar_bloque_oeste")
+            .on("input", calcular_area_bloque);
 
         $("#modal_agregar_bloque").on("show.bs.modal", function(e) {
             $("#modal_agregar_bloque_nombre").val('');
@@ -572,6 +575,29 @@
                     alert(xhr.responseText);
                 },
             });
+        }
+
+        function calcular_area_bloque() {
+            var norte_valor = parseFloat($("#modal_agregar_bloque_norte").val());
+            var sur_valor = parseFloat($("#modal_agregar_bloque_sur").val());
+            var este_valor = parseFloat($("#modal_agregar_bloque_este").val());
+            var oeste_valor = parseFloat($("#modal_agregar_bloque_oeste").val());
+
+            if (
+                isNaN(norte_valor) || norte_valor <= 0 ||
+                isNaN(sur_valor) || sur_valor <= 0 ||
+                isNaN(este_valor) || este_valor <= 0 ||
+                isNaN(oeste_valor) || oeste_valor <= 0
+            ) {
+                $("#modal_agregar_bloque_area").val('');
+                return;
+            }
+
+            var promedio_norte_sur = (norte_valor + sur_valor) / 2;
+            var promedio_este_oeste = (este_valor + oeste_valor) / 2;
+            var area_calculada = promedio_norte_sur * promedio_este_oeste;
+
+            $("#modal_agregar_bloque_area").val(area_calculada.toFixed(2));
         }
     </script>
 @endpush

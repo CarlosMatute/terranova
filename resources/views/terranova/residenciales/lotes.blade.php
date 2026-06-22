@@ -53,8 +53,10 @@
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
                                     <th scope="col" class="text-white">Lote</th>
+                                    <th scope="col" class="text-white">Colindancias</th>
                                     <th scope="col" class="text-white">Area</th>
                                     <th scope="col" class="text-white">Precio</th>
+                                    <th scope="col" class="text-white">Financiamiento</th>
                                     <th scope="col" class="text-white">Estado</th>
                                     <th scope="col" class="text-white">Opciones</th>
                                 </tr>
@@ -64,8 +66,10 @@
                                     <tr style="font-size: small">
                                         <td>{{ $row->id }}</td>
                                         <td><span class="badge bg-success">{{ $row->nombre }}</span></td>
+                                        <td><small class="text-muted">{{ $row->colindancias }}</small></td>
                                         <td>{{ $row->area_formateado }}</td>
                                         <td>{{ $row->precio_formateado }}</td>
+                                        <td>{{ $row->anios_financiamiento_formateado }}</td>
                                         <td>
                                             @if ($row->estado == 'Vendido')
                                                 <a href="{{ url('/ventas/detalle/' . $row->id_venta) }}" class="btn btn-danger btn-xs w-100">
@@ -82,16 +86,16 @@
                                         <td>
                                             <div class="d-flex gap-1">
                                                 @if ($row->estado != 'Vendido')
-                                                    <button type="button" class="btn btn-warning btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote"
-                                                        data-id="{{ $row->id }}" data-precio="{{ $row->precio }}" data-norte="{{ $row->norte }}" 
-                                                        data-sur="{{ $row->sur }}" data-este="{{ $row->este }}" data-oeste="{{ $row->oeste }}"
-                                                        data-area="{{ $row->area }}" data-financiamiento="{{ $row->anios_financiamiento }}">
+<button type="button" class="btn btn-warning btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote"
+    data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}" data-precio="{{ $row->precio }}" data-norte="{{ $row->norte }}"
+    data-sur="{{ $row->sur }}" data-este="{{ $row->este }}" data-oeste="{{ $row->oeste }}"
+    data-area="{{ $row->area }}" data-financiamiento="{{ $row->anios_financiamiento }}">
                                                         <i data-feather="edit-2" width="14" height="14"></i> Editar
                                                     </button>
                                                     <button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}">
                                                         <i data-feather="trash-2" width="14" height="14"></i> Eliminar
                                                     </button>
-                                                    
+
                                                     @if ($row->estado == 'Reservado')
                                                         <button type="button" class="btn btn-secondary btn-xs btn_quitar_reserva" data-id="{{ $row->id }}">
                                                             <i data-feather="user-x" width="14" height="14"></i> Quitar Reserva
@@ -126,10 +130,10 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-4" id="div_lote_siguiente">
+                        <div class="col-md-4" id="div_lote_siguiente" @if($bloque->cantidad_lotes == 0) style="display:none" @endif>
                             <div class="mb-3">
-                                <label class="form-label">Siguiente Lote</label>
-                                <button type="button" class="btn btn-success form-control" id="lbl_lote_siguiente"></button>
+                                <label class="form-label" id="lbl_lote_titulo">Siguiente Lote</label>
+                                <button type="button" class="btn btn-success form-control" id="lbl_lote_siguiente">{{ $lote_siguiente->nombre }}</button>
                             </div>
                         </div>
                         <div class="col-md-4" id="div_cantidad_lotes">
@@ -155,7 +159,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3"><label class="form-label">Area (m²)</label><input id="modal_lote_area" class="form-control" type="number" /></div>
-                        <div class="col-md-6 mb-3"><label class="form-label">Años Financiamiento</label><input id="modal_lote_financiamiento" class="form-control" type="number" /></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Años Financiamiento</label><input id="modal_lote_financiamiento" class="form-control" type="number" /></div>   
                     </div>
                 </div>
                 <div class="modal-footer bg-secondary">
@@ -191,7 +195,7 @@
                 </div>
                 <div class="modal-footer bg-secondary">
                     <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_confirmar_reserva"><i data-feather="check" width="16" height="16"></i> Confirmar Reserva</button>
+                    <button type="button" class="btn btn-primary btn-xs" id="btn_confirmar_reserva"><i data-feather="check" width="16" height="16"></i> Confirmar Reserva</button>       
                 </div>
             </div>
         </div>
@@ -212,9 +216,57 @@
         var accion = 1;
         var id_lote = null;
         var id_bloque_residencial = {{ $bloque->id_bloque_residencial }};
+        var cantidad_lotes_existentes = {{ $bloque->cantidad_lotes }};
+        var rowIndexEditar = null;
+        var rowIndexReservar = null;
+
+        function construirFilaLote(r) {
+            var estadoHtml = '';
+            if (r.estado == 'Vendido') {
+                estadoHtml = '<a href="{{ url('/ventas/detalle') }}/' + r.id_venta + '" class="btn btn-danger btn-xs w-100"><i data-feather="shopping-bag" width="14" height="14"></i> Vendido</a>';
+            } else if (r.estado == 'Reservado') {
+                var nombreComp = (r.nombre_completo || '').replace(/'/g, '&#39;');
+                estadoHtml = '<button type="button" class="btn btn-warning btn-xs w-100" onclick="Swal.fire(\'Reservado por:\', \'' + nombreComp + '<br>Vence: ' + r.reservado_hasta_formateado + '\', \'info\')"><i data-feather="clock" width="14" height="14"></i> Reservado</button>';
+            } else {
+                estadoHtml = '<span class="badge bg-outline-success w-100 text-success">Disponible</span>';
+            }
+
+            var opcionesHtml = '';
+            if (r.estado != 'Vendido') {
+                opcionesHtml +=
+                    '<div class="d-flex gap-1">' +
+                    '<button type="button" class="btn btn-warning btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '" data-precio="' + r.precio + '" data-norte="' + r.norte + '" data-sur="' + r.sur + '" data-este="' + r.este + '" data-oeste="' + r.oeste + '" data-area="' + r.area + '" data-financiamiento="' + r.anios_financiamiento + '"><i data-feather="edit-2" width="14" height="14"></i> Editar</button>' +
+                    '<button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '"><i data-feather="trash-2" width="14" height="14"></i> Eliminar</button>';
+
+                if (r.estado == 'Reservado') {
+                    opcionesHtml += '<button type="button" class="btn btn-secondary btn-xs btn_quitar_reserva" data-id="' + r.id + '"><i data-feather="user-x" width="14" height="14"></i> Quitar Reserva</button>';
+                } else {
+                    opcionesHtml += '<button type="button" class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#modal_reservar_lote" data-id="' + r.id + '"><i data-feather="user-plus" width="14" height="14"></i> Reservar</button>';
+                }
+
+                opcionesHtml += '</div>';
+            } else {
+                opcionesHtml = '<button class="btn btn-light btn-xs disabled" disabled><i data-feather="lock" width="14" height="14"></i> Bloqueado</button>';
+            }
+
+            return [
+                r.id,
+                '<span class="badge bg-success">' + r.nombre + '</span>',
+                r.colindancias,
+                r.area_formateado,
+                r.precio_formateado,
+                r.anios_financiamiento_formateado,
+                estadoHtml,
+                opcionesHtml
+            ];
+        }
+
+        function csrfToken() {
+            return $('meta[name="csrf-token"]').attr('content');
+        }
 
         $(document).ready(function() {
-            $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') } });
+            $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': csrfToken() } });
             table = $('#tbl_lotes').DataTable({
                 responsive: true,
                 language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" }
@@ -226,16 +278,61 @@
             accion = 1;
         });
 
+        $(document).on("click", ".btn_editar_lote", function() {
+            var tr = $(this).closest('tr');
+            rowIndexEditar = table.row(tr).index();
+        });
+
         $("#modal_agregar_lote").on("show.bs.modal", function(e) {
-            $("#modal_agregar_lote_nombre").val('');
-            $("#modal_agregar_lote_cantidad_lotes").val('');
-            $("#modal_agregar_lote_precio_lotes").val('');
-            $("#modal_agregar_lote_norte").val('');
-            $("#modal_agregar_lote_sur").val('');
-            $("#modal_agregar_lote_este").val('');
-            $("#modal_agregar_lote_oeste").val('');
-            $("#modal_agregar_lote_area").val('');
-            $("#modal_agregar_lote_financiamiento").val('');
+            var triggerLink = $(e.relatedTarget);
+            id_lote = triggerLink.data("id");
+
+            if (id_lote) {
+                accion = 2;
+                $("#modal_lote_titulo").text("Editar Lote");
+                $("#div_lote_siguiente").show();
+                $("#div_cantidad_lotes").hide();
+                $("#lbl_lote_titulo").text("Lote Actual");
+                $("#lbl_lote_siguiente").text(triggerLink.data("nombre"));
+                $("#lbl_lote_siguiente").removeClass("btn-success").addClass("btn-info");
+                
+                $("#modal_lote_precio").val(triggerLink.data("precio"));
+                $("#modal_lote_norte").val(triggerLink.data("norte"));
+                $("#modal_lote_sur").val(triggerLink.data("sur"));
+                $("#modal_lote_este").val(triggerLink.data("este"));
+                $("#modal_lote_oeste").val(triggerLink.data("oeste"));
+                $("#modal_lote_area").val(triggerLink.data("area"));
+                $("#modal_lote_financiamiento").val(triggerLink.data("financiamiento"));
+            } else {
+                accion = 1;
+                $("#modal_lote_titulo").text("Registrar Lote");
+                if (cantidad_lotes_existentes > 0) {
+                    $("#div_lote_siguiente").show();
+                }
+                $("#div_cantidad_lotes").show();
+                $("#lbl_lote_titulo").text("Siguiente Lote");
+                $("#lbl_lote_siguiente").removeClass("btn-info").addClass("btn-success");
+                $("#lbl_lote_siguiente").text('{{ $lote_siguiente->nombre }}');
+
+                $("#modal_lote_cantidad").val('1');
+                $("#modal_lote_precio").val('');
+                $("#modal_lote_norte").val('');
+                $("#modal_lote_sur").val('');
+                $("#modal_lote_este").val('');
+                $("#modal_lote_oeste").val('');
+                $("#modal_lote_area").val('');
+                $("#modal_lote_financiamiento").val('');
+            }
+        });
+
+        $(document).on("input", "#modal_lote_norte, #modal_lote_sur, #modal_lote_este, #modal_lote_oeste", function() {
+            var norte = parseFloat($("#modal_lote_norte").val()) || 0;
+            var sur = parseFloat($("#modal_lote_sur").val()) || 0;
+            var este = parseFloat($("#modal_lote_este").val()) || 0;
+            var oeste = parseFloat($("#modal_lote_oeste").val()) || 0;
+
+            var area = ((norte + sur) / 2) * ((este + oeste) / 2);
+            $("#modal_lote_area").val(area.toFixed(2));
         });
 
         $("#modal_eliminar_bloque").on("show.bs.modal", function(e) {
@@ -248,6 +345,7 @@
 
         $("#btn_guardar_lote").on("click", function() {
             var data = {
+                _token: csrfToken(),
                 id: id_lote,
                 id_bloque_residencial: id_bloque_residencial,
                 cantidad_lotes: $("#modal_lote_cantidad").val(),
@@ -266,8 +364,26 @@
                 url: "{{ url('/residenciales/bloques/lotes/guardar') }}",
                 data: data,
                 success: function(res) {
-                    if (res.msgError) Swal.fire('Error', res.msgError, 'error');
-                    else Swal.fire('Éxito', res.msgSuccess, 'success').then(() => location.reload());
+                    if (res.msgError) {
+                        Swal.fire('Error', res.msgError, 'error');
+                        return;
+                    }
+
+                    if (res.lote) {
+                        var nuevaFila = construirFilaLote(res.lote);
+                        if (accion == 1) {
+                            table.row.add(nuevaFila).draw();
+                            cantidad_lotes_existentes++;
+                        } else if (accion == 2) {
+                            table.row(rowIndexEditar).data(nuevaFila).draw();
+                        }
+                        feather.replace();
+                    } else {
+                        location.reload();
+                    }
+
+                    $("#modal_agregar_lote").modal("hide");
+                    Swal.fire('Éxito', res.msgSuccess, 'success');
                 }
             });
         });
@@ -275,6 +391,9 @@
         $(document).on("click", ".btn_eliminar_lote", function() {
             var id = $(this).data("id");
             var nombre = $(this).data("nombre");
+            var tr = $(this).closest('tr');
+            var rowIndexEliminar = table.row(tr).index();
+
             Swal.fire({
                 title: '¿Eliminar lote ' + nombre + '?',
                 text: "Esta acción no se puede revertir.",
@@ -287,9 +406,14 @@
                     $.ajax({
                         type: "POST",
                         url: "{{ url('/residenciales/bloques/lotes/guardar') }}",
-                        data: { id: id, accion: 3 },
+                        data: { _token: csrfToken(), id: id, accion: 3 },
                         success: function(res) {
-                            location.reload();
+                            if (res.msgError) {
+                                Swal.fire('Error', res.msgError, 'error');
+                                return;
+                            }
+                            table.row(rowIndexEliminar).remove().draw();
+                            Swal.fire('Éxito', res.msgSuccess, 'success');
                         }
                     });
                 }
@@ -298,6 +422,8 @@
 
         $(document).on("click", "[data-bs-target='#modal_reservar_lote']", function() {
             id_lote = $(this).data("id");
+            var tr = $(this).closest('tr');
+            rowIndexReservar = table.row(tr).index();
         });
 
         $("#btn_confirmar_reserva").on("click", function() {
@@ -309,130 +435,47 @@
             $.ajax({
                 type: "POST",
                 url: "{{ url('/residenciales/bloques/lotes/guardar') }}",
-                data: { id: id_lote, id_cliente_reservar: id_cliente, reservado_hasta: hasta, accion: 4 },
+                data: { _token: csrfToken(), id: id_lote, id_cliente_reservar: id_cliente, reservado_hasta: hasta, accion: 4 },
                 success: function(res) {
-                    if (res.msgError) Swal.fire('Error', res.msgError, 'error');
-                    else Swal.fire('Éxito', res.msgSuccess, 'success').then(() => location.reload());
+                    if (res.msgError) {
+                        Swal.fire('Error', res.msgError, 'error');
+                        return;
+                    }
+                    if (res.lote) {
+                        table.row(rowIndexReservar).data(construirFilaLote(res.lote)).draw();
+                        feather.replace();
+                    } else {
+                        location.reload();
+                    }
+                    $("#modal_reservar_lote").modal("hide");
+                    Swal.fire('Éxito', res.msgSuccess, 'success');
                 }
             });
         });
 
         $(document).on("click", ".btn_quitar_reserva", function() {
             var id = $(this).data("id");
+            var tr = $(this).closest('tr');
+            var rowIndex = table.row(tr).index();
+
             $.ajax({
                 type: "post",
-                url: url_guardar_lote,
-                data: {
-                    id: id,
-                    id_bloque_residencial: id_bloque_residencial,
-                    id_residencial: id_residencial,
-                    cantidad_lotes: cantidad_lotes,
-                    precio_lote: precio_lote,
-                    norte: norte,
-                    sur: sur,
-                    este: este,
-                    oeste: oeste,
-                    area: area,
-                    financiamiento: financiamiento,
-                    accion: accion
-                },
-                success: function(data) {
-                    if (data.msgError != null) {
-                        titleMsg = "Error al Guardar";
-                        textMsg = data.msgError;
-                        typeMsg = "error";
-                        timer = null;
-                        btn_activo = true;
-                        timeout = data.timeout;
-                    } else {
-                        titleMsg = "Datos Guardados";
-                        textMsg = data.msgSuccess;
-                        typeMsg = "success";
-                        timer = 2000;
-
-                        var bloque_siguiente_list = data.bloque_siguiente;
-                        bloque_siguiente = bloque_siguiente_list.nombre;
-                        $("#modal_agregar_lote_siguiente").html(bloque_siguiente);
-                        id_bloque_siguiente = bloque_siguiente_list.id;
-                        var agregarBotonDT = null;
-                        var row = data.bloques_list;
-                        var baseUrl = "{{ url('/') }}";
-                        if (accion == 1 || accion == 2) {
-                            var nuevaFilaDT = [
-                                row.id,
-                                '<h4><span class="badge bg-primary">' + row.bloque + '</span></h4>',
-                                row.lotes,
-
-                                '<div class="d-flex gap-1">' +
-
-                                '<button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" data-id="' +
-                                row.id + '" data-bloque="' + row.bloque + '">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> Eliminar' +
-                                '</button>' +
-
-                                '<a href="' + baseUrl + '/residenciales/' + id_residencial + '/bloques/' +
-                                row.id +
-                                '" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-grid"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Lotes' +
-                                '</a>' +
-                                '</div>'
-                            ];
-                        }
-                        if (accion == 1) {
-                            table.row.add(nuevaFilaDT).draw();
-                            var filas = table.rows().count();
-
-                            var quitarBotonDT = '<div class="d-flex gap-1">' +
-
-                                '<a href="' + baseUrl + '/residenciales/' + id_residencial +
-                                '/bloques" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Lotes' +
-                                '</a>' +
-                                '</div>';
-
-                            table.cell(filas - 2, 3).data(quitarBotonDT).draw();
-                        } else if (accion == 2) {
-                            table.row(rowNumber).data(nuevaFilaDT);
-                        } else if (accion == 3) {
-
-                            var bloque_anterior_list = data.bloque_anterior;
-                            console.log(bloque_anterior_list.bloque);
-                            agregarBotonDT = [
-                                '<div class="d-flex gap-1">' +
-
-                                '<button type="button" class="btn btn-danger btn-xs" data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" data-id="' +
-                                bloque_anterior_list.id + '" data-bloque="' + bloque_anterior_list.bloque +
-                                '">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg> Eliminar' +
-                                '</button>' +
-
-                                '<a href="' + baseUrl + '/residenciales/' + id_residencial +
-                                '/bloques" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
-                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Lotes' +
-                                '</a>' +
-                                '</div>'
-                            ];
-
-                            table.row(rowNumber).remove().draw();
-                            table.cell(rowNumber - 1, 3).data(agregarBotonDT).draw();
-                            $("#modal_eliminar_bloque").modal("hide");
-                        }
-                        $("#modal_agregar_lote").modal("hide");
-                        btn_activo = true;
+                url: "{{ url('/residenciales/bloques/lotes/guardar') }}",
+                data: { _token: csrfToken(), id: id, accion: 5 },
+                success: function(res) {
+                    if (res.msgError) {
+                        Swal.fire('Error', res.msgError, 'error');
+                        return;
                     }
-                    //console.log(textMsg);
-                    ToastLG.fire({
-                        icon: typeMsg,
-                        title: titleMsg,
-                        html: textMsg,
-                        timer: timer
-                    })
-
-                },
-                error: function(xhr, status, error) {
-                    alert(xhr.responseText);
-                },
+                    if (res.lote) {
+                        table.row(rowIndex).data(construirFilaLote(res.lote)).draw();
+                        feather.replace();
+                    } else {
+                        location.reload();
+                    }
+                    Swal.fire('Éxito', res.msgSuccess, 'success');
+                }
             });
-        }
+        });
     </script>
 @endpush

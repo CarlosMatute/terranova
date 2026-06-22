@@ -16,7 +16,7 @@ INSERT INTO
                 'Administrador',
                 'admin@loti.com',
                 'admin',
-                '/p/xC2J8I/OLJVCWd4nJsWzpItHNXse8NzG9rQqrx6'
+                '$2y$10$jsPuTA62MG6/p/xC2J8I/OLJVCWd4nJsWzpItHNXse8NzG9rQqrx6'
         ) ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS public.residenciales
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS PUBLIC.ESTADOS_CATALOGO (
 );
 
 INSERT INTO estados_catalogo (nombre, descripcion) VALUES
-('Disponible', 'Estado que indica que el lote está disponible para la venta'),
+('Disponible', 'Estado que indica que el lote estï¿½ disponible para la venta'),
 ('Reservado', 'Estado que indica que el lote ha sido apartado temporalmente'),
 ('Vendido', 'Estado que indica que el lote ya ha sido vendido') ON CONFLICT DO NOTHING;
 

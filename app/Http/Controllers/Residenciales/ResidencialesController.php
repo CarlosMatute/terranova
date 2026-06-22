@@ -514,11 +514,20 @@ class ResidencialesController extends Controller
         $id_cliente_reservar = $request->id_cliente_reservar;
         $reservado_hasta = $request->reservado_hasta;
 
+        $msgSuccess = null;
+        $msgError = null;
+
         DB::beginTransaction();
         try {
             if($accion == 1){
                 if($cantidad_lotes > 1) {
-                    DB::select("INSERT INTO
+                    DB::select("WITH max_lote AS (
+                        SELECT COALESCE(MAX(L.LOTE), 0) AS ultimo
+                        FROM LOTES L
+                        WHERE L.DELETED_AT IS NULL
+                            AND L.ID_BLOQUE_RESIDENCIAL = :id_bloque_residencial
+                    )
+                    INSERT INTO
                         PUBLIC.LOTES (
                             NOMBRE,
                             LOTE,
@@ -532,8 +541,8 @@ class ResidencialesController extends Controller
                             ID_BLOQUE_RESIDENCIAL
                         )
                     SELECT
-                        'L-' || GS,
-                        GS,
+                        'L-' || (ultimo + GS),
+                        ultimo + GS,
                         :area,
                         :norte,
                         :sur,
@@ -543,7 +552,8 @@ class ResidencialesController extends Controller
                         :financiamiento,
                         :id_bloque_residencial
                     FROM
-                        GENERATE_SERIES(1, :cantidad_lotes) AS GS", [
+                        GENERATE_SERIES(1, :cantidad_lotes) AS GS,
+                        max_lote", [
                         "id_bloque_residencial" => $id_bloque_residencial,
                         "area" => $area,
                         "norte" => $norte,
@@ -555,7 +565,7 @@ class ResidencialesController extends Controller
                         "cantidad_lotes" => $cantidad_lotes
                     ]);
                 }else {
-                    DB::select("INSERT INTO
+                    $loteInsertado = collect(DB::select("INSERT INTO
                         PUBLIC.LOTES (
                             NOMBRE,
                             LOTE,
@@ -583,7 +593,8 @@ class ResidencialesController extends Controller
                         LOTES L
                     WHERE
                         L.DELETED_AT IS NULL
-                        AND L.ID_BLOQUE_RESIDENCIAL = :id_bloque_residencial;", [
+                        AND L.ID_BLOQUE_RESIDENCIAL = :id_bloque_residencial
+                    RETURNING ID;", [
                         "area" => $area,
                         "norte" => $norte,
                         "sur" => $sur,
@@ -592,7 +603,7 @@ class ResidencialesController extends Controller
                         "precio" => $precio_lote,
                         "financiamiento" => $financiamiento,
                         "id_bloque_residencial" => $id_bloque_residencial
-                    ]);
+                    ]))->first();
                 }
 
                 $msgSuccess = "Lote guardado exitosamente.";
@@ -662,6 +673,43 @@ class ResidencialesController extends Controller
             }
 
             DB::commit();
+
+            $loteData = null;
+            $loteId = null;
+
+            if ($accion == 1 && $cantidad_lotes <= 1) {
+                $loteId = $loteInsertado->id ?? null;
+            } elseif (in_array($accion, [2, 4, 5])) {
+                $loteId = $id;
+            }
+
+            if ($loteId) {
+                $lote = DB::select("
+                    SELECT
+                        L.ID, L.NOMBRE, L.AREA, L.AREA || ' m²' AS AREA_FORMATEADO,
+                        L.NORTE, L.SUR, L.ESTE, L.OESTE, L.PRECIO,
+                        TO_CHAR(L.PRECIO, 'L999,999,999.99') AS PRECIO_FORMATEADO,
+                        L.ANIOS_FINANCIAMIENTO, L.ID_CLIENTE_RESERVAR, LV.ID_VENTA,
+                        'Norte: ' || L.NORTE || ' m, Sur: ' || L.SUR || ' m, Este: ' || L.ESTE || ' m, Oeste: ' || L.OESTE || ' m.' AS COLINDANCIAS,
+                        CASE WHEN L.ANIOS_FINANCIAMIENTO = 1 THEN L.ANIOS_FINANCIAMIENTO || ' año'
+                             ELSE L.ANIOS_FINANCIAMIENTO || ' años' END AS ANIOS_FINANCIAMIENTO_FORMATEADO,
+                        CASE WHEN LV.ID_VENTA IS NOT NULL THEN 'Vendido'
+                             WHEN L.ID_CLIENTE_RESERVAR IS NOT NULL THEN 'Reservado'
+                             ELSE 'Disponible' END AS ESTADO,
+                        TRIM(COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') ||
+                             COALESCE(C.SEGUNDO_NOMBRE || ' ', '') ||
+                             COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') ||
+                             COALESCE(C.SEGUNDO_APELLIDO, '')) AS NOMBRE_COMPLETO,
+                        L.RESERVADO_HASTA,
+                        TO_CHAR(L.RESERVADO_HASTA, 'DD/MM/YYYY') AS RESERVADO_HASTA_FORMATEADO
+                    FROM LOTES L
+                    LEFT JOIN CLIENTES C ON L.ID_CLIENTE_RESERVAR = C.ID
+                    LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
+                    WHERE L.DELETED_AT IS NULL AND L.ID = :id
+                ", ["id" => $loteId]);
+
+                $loteData = $lote[0] ?? null;
+            }
         } catch (Exception $e) {
             DB::rollback();
             $msgError = $e->getMessage();
@@ -669,7 +717,8 @@ class ResidencialesController extends Controller
 
         return response()->json([
             "msgSuccess" => $msgSuccess,
-            "msgError" => $msgError
+            "msgError" => $msgError,
+            "lote" => $loteData
         ]);
 
     }

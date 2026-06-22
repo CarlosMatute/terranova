@@ -16,6 +16,10 @@ class ClientesController extends Controller
     {
         $clientes = DB::select("SELECT
             ID,
+            PRIMER_NOMBRE,
+            SEGUNDO_NOMBRE,
+            PRIMER_APELLIDO,
+            SEGUNDO_APELLIDO,
             TRIM(
                 COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
                 COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
@@ -74,7 +78,7 @@ class ClientesController extends Controller
                 ]))->first();
 
                 if($existe){
-                    throw new Exception("Ya existe un cliente registrado con el número de identidad " . $identidad);
+                    throw new Exception("Ya existe un cliente registrado con el nï¿½mero de identidad " . $identidad);
                 }
 
                 $cliente = collect(DB::select("INSERT INTO
@@ -170,13 +174,17 @@ class ClientesController extends Controller
 
                 $msgSuccess = "Cliente eliminado exitosamente.";
             }else{
-                 throw new Exception("Acción no válida.");
+                 throw new Exception("Acciï¿½n no vï¿½lida.");
             }
 
             if($accion != 3){
                 $clientes_list = collect(DB::select("SELECT
                     ID,
-                    TRIM(
+            PRIMER_NOMBRE,
+            SEGUNDO_NOMBRE,
+            PRIMER_APELLIDO,
+            SEGUNDO_APELLIDO,
+            TRIM(
                         COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
                         COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
                         COALESCE(TRIM(PRIMER_APELLIDO) || ' ', '') || 

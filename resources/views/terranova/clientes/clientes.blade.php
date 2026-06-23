@@ -5,15 +5,32 @@
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <style>
+        .nav-tabs .nav-link.active { border-bottom-color: var(--ins-azul) !important; color: var(--ins-azul) !important; }
+        .nav-tabs .nav-link:hover { border-bottom-color: var(--ins-azul-claro) !important; }
+        .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
+    </style>
 @endpush
 
 @section('content')
     <div class="row">
         <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="mb-2">Clientes</h3>
-                    <p class="text-muted">Administración integral de clientes y sus referencias.</p>
+            <div class="card bg-azul text-white border-0 overflow-hidden" style="border-radius: 12px;">
+                <div class="card-body position-relative" style="background: linear-gradient(135deg, var(--ins-azul) 0%, var(--ins-azul-oscuro) 100%);">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15);">
+                                <i data-feather="users" width="28" height="28" class="text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="mb-1 fw-bold text-white">Clientes</h3>
+                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Administración integral de clientes, referencias y beneficiarios</p>
+                        </div>
+                    </div>
+                    <div class="position-absolute end-0 top-0 opacity-10" style="transform: translate(20%, -20%);">
+                        <i data-feather="users" width="120" height="120" class="text-white"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -21,17 +38,17 @@
 
     <div class="row">
         <div class="col-12 col-md-12 col-xl-12">
-            <div class="card border-secondary">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div class="card border-azul">
+                <div class="card-header bg-azul text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0"><i class="text-white icon-lg pb-3px" data-feather="users"></i> Clientes Registrados</h5>
-                    <button type="button" class="btn btn-light btn-xs" id="btn_agregar_cliente" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente">
+                    <button type="button" class="btn btn-blanco btn-xs" id="btn_agregar_cliente" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente">
                         <i data-feather="plus" width="16" height="16"></i> Registrar Cliente
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="jambo_table table table-hover" id="tbl_clientes" border="1">
-                            <thead class="bg-secondary">
+                            <thead class="bg-azul-oscuro">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
                                     <th scope="col" class="text-white">Imagen</th>
@@ -54,7 +71,7 @@
                                         <td>{{ $row->contacto_telefonico }}</td>
                                         <td>
                                             <div class="d-flex gap-1">
-                                                <button type="button" class="btn btn-warning btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente"
+                                                <button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente"
                                                     data-id="{{ $row->id }}"
                                                     data-pnombre="{{ $row->primer_nombre }}" data-snombre="{{ $row->segundo_nombre }}"
                                                     data-papellido="{{ $row->primer_apellido }}" data-sapellido="{{ $row->segundo_apellido }}"
@@ -81,7 +98,7 @@
     <div class="modal fade" id="modal_agregar_cliente" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header bg-dark">
+                <div class="modal-header bg-azul">
                     <h6 class="modal-title h6 text-white" id="modal_cliente_titulo">Registrar Cliente</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
@@ -102,8 +119,8 @@
                             <div class="row mb-3">
                                 <div class="col-12 text-center">
                                     <div class="position-relative d-inline-block">
-                                        <img id="cli_img_preview" class="wd-100 ht-100 rounded-circle" src="{{ asset('/assets/images/placeholder_user.png') }}" style="object-fit:cover; border:3px solid #ddd;">
-                                        <button type="button" class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle d-flex align-items-center justify-content-center" id="btn_cambiar_foto" style="width:30px;height:30px;padding:0;">
+                                        <img id="cli_img_preview" class="wd-100 ht-100 rounded-circle" src="{{ asset('/assets/images/placeholder_user.png') }}" style="object-fit:cover; border:3px solid var(--ins-azul);">
+                                        <button type="button" class="btn btn-azul btn-sm position-absolute bottom-0 end-0 rounded-circle d-flex align-items-center justify-content-center" id="btn_cambiar_foto" style="width:30px;height:30px;padding:0;">
                                             <i data-feather="camera" width="14" height="14"></i>
                                         </button>
                                     </div>
@@ -125,29 +142,29 @@
                         <div class="tab-pane fade p-3" id="referencias" role="tabpanel" aria-labelledby="referencias-tab">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0">Referencias Personales</h6>
-                                <button type="button" class="btn btn-success btn-xs" id="btn_agregar_referencia"><i data-feather="plus" width="14" height="14"></i> Agregar Referencia</button>
+                                <button type="button" class="btn btn-azul btn-xs" id="btn_agregar_referencia"><i data-feather="plus" width="14" height="14"></i> Agregar Referencia</button>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover table-sm" id="tbl_referencias">
-                                    <thead class="bg-light">
+                                    <thead class="bg-azul-oscuro">
                                         <tr>
-                                            <th>Nombre Completo</th>
-                                            <th>Teléfono</th>
-                                            <th>Dirección</th>
-                                            <th style="width:60px">Acción</th>
+                                            <th class="text-white">Nombre Completo</th>
+                                            <th class="text-white">Teléfono</th>
+                                            <th class="text-white">Dirección</th>
+                                            <th class="text-white" style="width:60px">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbody_referencias"></tbody>
                                 </table>
                             </div>
-                            <div class="card card-body bg-light mt-2 d-none" id="form_referencia_container">
+                            <div class="card card-body bg-blanco-humo mt-2 d-none" id="form_referencia_container">
                                 <div class="row">
                                     <div class="col-md-4 mb-2"><label class="form-label small">Nombre Completo <span class="text-danger">*</span></label><input id="ref_nombre" class="form-control form-control-sm" type="text" /></div>
                                     <div class="col-md-4 mb-2"><label class="form-label small">Teléfono <span class="text-danger">*</span></label><input id="ref_telefono" class="form-control form-control-sm" type="text" /></div>
                                     <div class="col-md-4 mb-2"><label class="form-label small">Dirección <span class="text-danger">*</span></label><input id="ref_direccion" class="form-control form-control-sm" type="text" /></div>
                                     <div class="col-12 mt-2">
-                                        <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_referencia"><i data-feather="check" width="14" height="14"></i> Agregar</button>
-                                        <button type="button" class="btn btn-secondary btn-xs" id="btn_cancelar_referencia"><i data-feather="x" width="14" height="14"></i> Cancelar</button>
+                                        <button type="button" class="btn btn-azul btn-xs" id="btn_guardar_referencia"><i data-feather="check" width="14" height="14"></i> Agregar</button>
+                                        <button type="button" class="btn btn-negro btn-xs" id="btn_cancelar_referencia"><i data-feather="x" width="14" height="14"></i> Cancelar</button>
                                     </div>
                                 </div>
                             </div>
@@ -155,26 +172,26 @@
                         <div class="tab-pane fade p-3" id="beneficiarios" role="tabpanel" aria-labelledby="beneficiarios-tab">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0">Beneficiarios</h6>
-                                <button type="button" class="btn btn-success btn-xs" id="btn_agregar_beneficiario"><i data-feather="plus" width="14" height="14"></i> Agregar Beneficiario</button>
+                                <button type="button" class="btn btn-azul btn-xs" id="btn_agregar_beneficiario"><i data-feather="plus" width="14" height="14"></i> Agregar Beneficiario</button>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover table-sm" id="tbl_beneficiarios">
-                                    <thead class="bg-light">
+                                    <thead class="bg-azul-oscuro">
                                         <tr>
-                                            <th>Nombre Completo</th>
-                                            <th>Identidad</th>
-                                            <th>Parentezco</th>
-                                            <th>Teléfono 1</th>
-                                            <th>Teléfono 2</th>
-                                            <th>Correo</th>
-                                            <th>Dirección</th>
-                                            <th style="width:60px">Acción</th>
+                                            <th class="text-white">Nombre Completo</th>
+                                            <th class="text-white">Identidad</th>
+                                            <th class="text-white">Parentezco</th>
+                                            <th class="text-white">Teléfono 1</th>
+                                            <th class="text-white">Teléfono 2</th>
+                                            <th class="text-white">Correo</th>
+                                            <th class="text-white">Dirección</th>
+                                            <th class="text-white" style="width:60px">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbody_beneficiarios"></tbody>
                                 </table>
                             </div>
-                            <div class="card card-body bg-light mt-2 d-none" id="form_beneficiario_container">
+                            <div class="card card-body bg-blanco-humo mt-2 d-none" id="form_beneficiario_container">
                                 <div class="row">
                                     <div class="col-md-4 mb-2"><label class="form-label small">Nombre Completo <span class="text-danger">*</span></label><input id="ben_nombre" class="form-control form-control-sm" type="text" /></div>
                                     <div class="col-md-4 mb-2"><label class="form-label small">Identidad <span class="text-danger">*</span> <small class="text-muted">(sin guiones)</small></label><input id="ben_identidad" class="form-control form-control-sm" type="text" /></div>
@@ -184,17 +201,17 @@
                                     <div class="col-md-4 mb-2"><label class="form-label small">Correo</label><input id="ben_email" class="form-control form-control-sm" type="email" /></div>
                                     <div class="col-md-12 mb-2"><label class="form-label small">Dirección <span class="text-danger">*</span></label><input id="ben_direccion" class="form-control form-control-sm" type="text" /></div>
                                     <div class="col-12 mt-2">
-                                        <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_beneficiario"><i data-feather="check" width="14" height="14"></i> Agregar</button>
-                                        <button type="button" class="btn btn-secondary btn-xs" id="btn_cancelar_beneficiario"><i data-feather="x" width="14" height="14"></i> Cancelar</button>
+                                        <button type="button" class="btn btn-azul btn-xs" id="btn_guardar_beneficiario"><i data-feather="check" width="14" height="14"></i> Agregar</button>
+                                        <button type="button" class="btn btn-negro btn-xs" id="btn_cancelar_beneficiario"><i data-feather="x" width="14" height="14"></i> Cancelar</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_cliente"><i data-feather="save" width="16" height="16"></i> Guardar</button>
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-azul btn-xs" id="btn_guardar_cliente"><i data-feather="save" width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
         </div>
@@ -204,16 +221,16 @@
     <div class="modal fade" id="modal_cropper" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md">
             <div class="modal-content">
-                <div class="modal-header bg-dark">
+                <div class="modal-header bg-azul">
                     <h6 class="modal-title h6 text-white">Recortar Foto</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
                 <div class="modal-body p-2">
                     <img id="cropping_image" src="" class="w-100">
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="14" height="14"></i> Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_confirmar_crop"><i data-feather="check" width="14" height="14"></i> Aplicar</button>
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="14" height="14"></i> Cancelar</button>
+                    <button type="button" class="btn btn-azul btn-xs" id="btn_confirmar_crop"><i data-feather="check" width="14" height="14"></i> Aplicar</button>
                 </div>
             </div>
         </div>
@@ -254,7 +271,7 @@
 
             var opcionesHtml =
                 '<div class="d-flex gap-1">' +
-                    '<button type="button" class="btn btn-warning btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente" ' +
+                    '<button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente" ' +
                         'data-id="' + r.id + '" ' +
                         'data-pnombre="' + (r.primer_nombre || '') + '" ' +
                         'data-snombre="' + (r.segundo_nombre || '') + '" ' +

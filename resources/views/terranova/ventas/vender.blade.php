@@ -8,10 +8,22 @@
 @section('content')
     <div class="row">
         <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="mb-2">Nueva Venta</h3>
-                    <p class="text-muted">Seleccione los lotes y procese el financiamiento o pago de contado.</p>
+            <div class="card bg-azul text-white border-0 overflow-hidden" style="border-radius: 12px;">
+                <div class="card-body position-relative" style="background: linear-gradient(135deg, var(--ins-azul) 0%, var(--ins-azul-oscuro) 100%);">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15);">
+                                <i data-feather="shopping-cart" width="28" height="28" class="text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="mb-1 fw-bold text-white">Vender</h3>
+                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Seleccione los lotes y procese el financiamiento o pago de contado.</p>
+                        </div>
+                    </div>
+                    <div class="position-absolute end-0 top-0 opacity-10" style="transform: translate(20%, -20%);">
+                        <i data-feather="shopping-cart" width="120" height="120" class="text-white"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -20,8 +32,8 @@
     <div class="row">
         <!-- Panel de Selección -->
         <div class="col-md-7">
-            <div class="card border-secondary mb-4">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div class="card border-azul mb-4">
+                <div class="card-header bg-azul text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0"><i data-feather="search" width="16" height="16"></i> Selección de Lotes</h5>
                 </div>
                 <div class="card-body">
@@ -39,18 +51,18 @@
                                 </option>
                             @endforeach
                         </select>
-                        <button class="btn btn-primary mt-2 w-100" id="btn_agregar_lote_lista">
+                        <button class="btn btn-azul mt-2 w-100" id="btn_agregar_lote_lista">
                             <i data-feather="plus" width="16" height="16"></i> Agregar a la venta
                         </button>
                     </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover" id="tbl_lotes_venta">
-                            <thead class="bg-light">
+                            <thead class="bg-azul-oscuro text-white">
                                 <tr>
-                                    <th>Lote Seleccionado</th>
-                                    <th>Precio</th>
-                                    <th></th>
+                                    <th class="text-white">Lote Seleccionado</th>
+                                    <th class="text-white">Precio</th>
+                                    <th class="text-white"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -71,8 +83,8 @@
 
         <!-- Panel de Calculadora -->
         <div class="col-md-5">
-            <div class="card border-secondary">
-                <div class="card-header bg-primary text-white">
+            <div class="card border-azul">
+                <div class="card-header bg-azul text-white">
                     <h5 class="text-white mb-0"><i data-feather="pocket" width="16" height="16"></i> Plan de Venta</h5>
                 </div>
                 <div class="card-body">
@@ -81,7 +93,7 @@
                         <select class="form-select select2" id="id_cliente">
                             <option value="">Seleccione un cliente...</option>
                             @foreach ($clientes as $c)
-                                <option value="{{ $c->id }}">{{ $c->nombre }}</option>
+                                <option value="{{ $c->id }}" data-identidad="{{ $c->identidad ?? '' }}" data-imagen="{{ $c->imagen ?? '' }}">{{ $c->nombre }} - {{ $c->identidad ?? '' }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -100,7 +112,7 @@
                         </div>
                     </div>
 
-                    <div id="seccion_financiamiento" style="display:none;" class="p-3 bg-light rounded border">
+                    <div id="seccion_financiamiento" style="display:none;" class="p-3 bg-blanco-humo rounded border">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Años</label>
@@ -127,11 +139,11 @@
                         <div class="d-flex justify-content-between mb-1"><span>Total Intereses:</span> <strong id="lbl_total_intereses">0.00</strong></div>
                     </div>
 
-                    <div class="mt-4 p-3 bg-dark text-white rounded">
+                    <div class="mt-4 p-3 bg-azul-oscuro text-white rounded">
                         <h4 class="mb-0 text-center">TOTAL A PAGAR: <br><span id="lbl_total_pagar">0.00</span></h4>
                     </div>
 
-                    <button class="btn btn-success btn-lg w-100 mt-4" id="btn_procesar_venta">
+                    <button class="btn btn-azul btn-lg w-100 mt-4" id="btn_procesar_venta">
                         <i data-feather="check-circle" width="18" height="18"></i> PROCESAR VENTA
                     </button>
                 </div>
@@ -151,7 +163,26 @@
         var total_contado = 0;
 
         $(document).ready(function() {
-            $('.select2').select2();
+            function formatCliente(cliente) {
+                if (!cliente.id) return cliente.text;
+                var imgSrc = '{{ asset("storage/clientes/cli_") }}' + cliente.id + '/' + ($(cliente.element).attr('data-imagen') || '');
+                return '<img src="' + imgSrc + '" onerror="this.src=\'{{ asset("/assets/images/placeholder_user.png") }}\'" class="rounded-circle me-2" style="width: 28px; height: 28px; object-fit: cover;"> <span>' + cliente.text + '</span>';
+            }
+
+            $('#id_cliente').select2({
+                templateResult: formatCliente,
+                templateSelection: formatCliente,
+                escapeMarkup: function(m) { return m; },
+                matcher: function(params, data) {
+                    if ($.trim(params.term) === '') return data;
+                    var term = params.term.toLowerCase();
+                    var text = data.text.toLowerCase();
+                    var identidad = ($(data.element).attr('data-identidad') || '').toLowerCase();
+                    if (text.indexOf(term) > -1 || identidad.indexOf(term) > -1) return data;
+                    return null;
+                }
+            });
+            $('#sel_lote_buscador').select2();
 
             $('#btn_agregar_lote_lista').on('click', function() {
                 var sel = $('#sel_lote_buscador').find(':selected');

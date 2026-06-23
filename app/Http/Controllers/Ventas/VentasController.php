@@ -62,7 +62,7 @@ class VentasController extends Controller
 
     public function ver_vender()
     {
-        $clientes = DB::select("SELECT ID, TRIM(PRIMER_NOMBRE || ' ' || COALESCE(SEGUNDO_NOMBRE, '') || ' ' || PRIMER_APELLIDO || ' ' || COALESCE(SEGUNDO_APELLIDO, '')) AS NOMBRE FROM CLIENTES WHERE DELETED_AT IS NULL ORDER BY PRIMER_NOMBRE ASC");
+        $clientes = DB::select("SELECT ID, IDENTIDAD, IMAGEN, TRIM(PRIMER_NOMBRE || ' ' || COALESCE(SEGUNDO_NOMBRE, '') || ' ' || PRIMER_APELLIDO || ' ' || COALESCE(SEGUNDO_APELLIDO, '')) AS NOMBRE FROM CLIENTES WHERE DELETED_AT IS NULL ORDER BY PRIMER_NOMBRE ASC");
 
         $lotes_disponibles = DB::select("SELECT 
             L.ID,
@@ -185,7 +185,8 @@ class VentasController extends Controller
                 COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') || 
                 COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
                 COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
-            ) AS CLIENTE_NOMBRE
+            ) AS CLIENTE_NOMBRE,
+            C.IMAGEN AS CLIENTE_IMAGEN
         FROM 
             VENTAS V
             JOIN CLIENTES C ON V.ID_CLIENTE = C.ID

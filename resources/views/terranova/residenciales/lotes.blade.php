@@ -4,6 +4,9 @@
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/select2/select2.min.css') }}" rel="stylesheet" />
+    <style>
+        .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
+    </style>
 @endpush
 
 @section('content')
@@ -17,17 +20,20 @@
 
     <div class="row">
         <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
+            <div class="card bg-azul text-white border-0 overflow-hidden" style="border-radius: 12px;">
+                <div class="card-body position-relative" style="background: linear-gradient(135deg, var(--ins-azul) 0%, var(--ins-azul-oscuro) 100%);">
                     <div class="d-flex align-items-start">
                         <img src="{{ asset('storage/residenciales/res_' . $residencial->id . '/' . $bloque->imagen) }}"
-                            class="wd-90 ht-90 me-3" alt="..."
+                            class="wd-70 ht-70 rounded me-3 border border-white border-2" alt="..."
                             onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
                         <div>
-                            <h3 class="mb-2">Residencial: {{ $residencial->nombre }}</h3>
-                            <h4 class="mb-2">Bloque: <span class="badge bg-primary">{{ $bloque->bloque }}</span></h4>
-                            <p class="text-muted">Gestión de lotes para este bloque seleccionado.</p>
+                            <h3 class="mb-1 fw-bold text-white">Residencial: {{ $residencial->nombre }}</h3>
+                            <h4 class="mb-1 text-white fw-semibold">Bloque: <span class="badge bg-blanco text-azul">{{ $bloque->bloque }}</span></h4>
+                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Gestión de lotes para este bloque seleccionado.</p>
                         </div>
+                    </div>
+                    <div class="position-absolute end-0 top-0 opacity-10" style="transform: translate(20%, -20%);">
+                        <i data-feather="grid" width="120" height="120" class="text-white"></i>
                     </div>
                 </div>
             </div>
@@ -36,12 +42,12 @@
 
     <div class="row">
         <div class="col-12 col-md-12 col-xl-12">
-            <div class="card border-secondary">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div class="card border-azul">
+                <div class="card-header bg-azul text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0">
                         <i class="text-white icon-lg pb-3px" data-feather="grid"></i> Lotes Registrados
                     </h5>
-                    <button type="button" class="btn btn-light btn-xs" id="btn_agregar_lote" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-blanco btn-xs" id="btn_agregar_lote" data-bs-toggle="modal"
                         data-bs-target="#modal_agregar_lote">
                         <i data-feather="plus" width="16" height="16"></i> Registrar Lote
                     </button>
@@ -49,7 +55,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="jambo_table table table-hover" id="tbl_lotes" border="1">
-                            <thead class="bg-secondary text-white">
+                            <thead class="bg-azul-oscuro text-white">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
                                     <th scope="col" class="text-white">Lote</th>
@@ -72,11 +78,11 @@
                                         <td>{{ $row->anios_financiamiento_formateado }}</td>
                                         <td>
                                             @if ($row->estado == 'Vendido')
-                                                <a href="{{ url('/ventas/detalle/' . $row->id_venta) }}" class="btn btn-danger btn-xs w-100">
+                                                <a href="{{ url('/ventas/detalle/' . $row->id_venta) }}" class="btn btn-azul-claro btn-xs w-100">
                                                     <i data-feather="shopping-bag" width="14" height="14"></i> Vendido
                                                 </a>
                                             @elseif ($row->estado == 'Reservado')
-                                                <button type="button" class="btn btn-warning btn-xs w-100" onclick="Swal.fire('Reservado por:', '{{ $row->nombre_completo }}<br>Vence: {{ $row->reservado_hasta_formateado }}', 'info')">
+                                                <button type="button" class="btn btn-azul-claro btn-xs w-100" onclick="Swal.fire('Reservado por:', '{{ $row->nombre_completo }}<br>Vence: {{ $row->reservado_hasta_formateado }}', 'info')">
                                                     <i data-feather="clock" width="14" height="14"></i> Reservado
                                                 </button>
                                             @else
@@ -86,7 +92,7 @@
                                         <td>
                                             <div class="d-flex gap-1">
                                                 @if ($row->estado != 'Vendido')
-<button type="button" class="btn btn-warning btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote"
+<button type="button" class="btn btn-azul-claro btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote"
     data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}" data-precio="{{ $row->precio }}" data-norte="{{ $row->norte }}"
     data-sur="{{ $row->sur }}" data-este="{{ $row->este }}" data-oeste="{{ $row->oeste }}"
     data-area="{{ $row->area }}" data-financiamiento="{{ $row->anios_financiamiento }}">
@@ -97,16 +103,16 @@
                                                     </button>
 
                                                     @if ($row->estado == 'Reservado')
-                                                        <button type="button" class="btn btn-secondary btn-xs btn_quitar_reserva" data-id="{{ $row->id }}">
+                                                        <button type="button" class="btn btn-negro btn-xs btn_quitar_reserva" data-id="{{ $row->id }}">
                                                             <i data-feather="user-x" width="14" height="14"></i> Quitar Reserva
                                                         </button>
                                                     @else
-                                                        <button type="button" class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#modal_reservar_lote" data-id="{{ $row->id }}">
+                                                        <button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_reservar_lote" data-id="{{ $row->id }}">
                                                             <i data-feather="user-plus" width="14" height="14"></i> Reservar
                                                         </button>
                                                     @endif
                                                 @else
-                                                    <button class="btn btn-light btn-xs disabled" disabled><i data-feather="lock" width="14" height="14"></i> Bloqueado</button>
+                                                    <button class="btn btn-negro btn-xs disabled" disabled><i data-feather="lock" width="14" height="14"></i> Bloqueado</button>
                                                 @endif
                                             </div>
                                         </td>
@@ -124,7 +130,7 @@
     <div class="modal fade" id="modal_agregar_lote" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
+                <div class="modal-header bg-azul text-white">
                     <h6 class="modal-title h6 text-white" id="modal_lote_titulo">Registrar Lote</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
@@ -133,7 +139,7 @@
                         <div class="col-md-4" id="div_lote_siguiente" @if($bloque->cantidad_lotes == 0) style="display:none" @endif>
                             <div class="mb-3">
                                 <label class="form-label" id="lbl_lote_titulo">Siguiente Lote</label>
-                                <button type="button" class="btn btn-success form-control" id="lbl_lote_siguiente">{{ $lote_siguiente->nombre }}</button>
+                                <button type="button" class="btn btn-azul form-control" id="lbl_lote_siguiente">{{ $lote_siguiente->nombre }}</button>
                             </div>
                         </div>
                         <div class="col-md-4" id="div_cantidad_lotes">
@@ -162,9 +168,9 @@
                         <div class="col-md-6 mb-3"><label class="form-label">Años Financiamiento</label><input id="modal_lote_financiamiento" class="form-control" type="number" /></div>   
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_lote"><i data-feather="save" width="16" height="16"></i> Guardar</button>
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-azul btn-xs" id="btn_guardar_lote"><i data-feather="save" width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
         </div>
@@ -174,7 +180,7 @@
     <div class="modal fade" id="modal_reservar_lote" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
+                <div class="modal-header bg-azul text-white">
                     <h6 class="modal-title h6 text-white"><i data-feather="user-plus" width="16" height="16"></i> Reservar Lote</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
@@ -193,9 +199,9 @@
                         <input type="date" class="form-control" id="reservado_hasta" value="{{ date('Y-m-d', strtotime('+7 days')) }}">
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_confirmar_reserva"><i data-feather="check" width="16" height="16"></i> Confirmar Reserva</button>       
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cancelar</button>
+                    <button type="button" class="btn btn-azul btn-xs" id="btn_confirmar_reserva"><i data-feather="check" width="16" height="16"></i> Confirmar Reserva</button>       
                 </div>
             </div>
         </div>
@@ -223,10 +229,10 @@
         function construirFilaLote(r) {
             var estadoHtml = '';
             if (r.estado == 'Vendido') {
-                estadoHtml = '<a href="{{ url('/ventas/detalle') }}/' + r.id_venta + '" class="btn btn-danger btn-xs w-100"><i data-feather="shopping-bag" width="14" height="14"></i> Vendido</a>';
+                estadoHtml = '<a href="{{ url('/ventas/detalle') }}/' + r.id_venta + '" class="btn btn-azul-claro btn-xs w-100"><i data-feather="shopping-bag" width="14" height="14"></i> Vendido</a>';
             } else if (r.estado == 'Reservado') {
                 var nombreComp = (r.nombre_completo || '').replace(/'/g, '&#39;');
-                estadoHtml = '<button type="button" class="btn btn-warning btn-xs w-100" onclick="Swal.fire(\'Reservado por:\', \'' + nombreComp + '<br>Vence: ' + r.reservado_hasta_formateado + '\', \'info\')"><i data-feather="clock" width="14" height="14"></i> Reservado</button>';
+                estadoHtml = '<button type="button" class="btn btn-azul-claro btn-xs w-100" onclick="Swal.fire(\'Reservado por:\', \'' + nombreComp + '<br>Vence: ' + r.reservado_hasta_formateado + '\', \'info\')"><i data-feather="clock" width="14" height="14"></i> Reservado</button>';
             } else {
                 estadoHtml = '<span class="badge bg-outline-success w-100 text-success">Disponible</span>';
             }
@@ -235,18 +241,18 @@
             if (r.estado != 'Vendido') {
                 opcionesHtml +=
                     '<div class="d-flex gap-1">' +
-                    '<button type="button" class="btn btn-warning btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '" data-precio="' + r.precio + '" data-norte="' + r.norte + '" data-sur="' + r.sur + '" data-este="' + r.este + '" data-oeste="' + r.oeste + '" data-area="' + r.area + '" data-financiamiento="' + r.anios_financiamiento + '"><i data-feather="edit-2" width="14" height="14"></i> Editar</button>' +
+                    '<button type="button" class="btn btn-azul-claro btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '" data-precio="' + r.precio + '" data-norte="' + r.norte + '" data-sur="' + r.sur + '" data-este="' + r.este + '" data-oeste="' + r.oeste + '" data-area="' + r.area + '" data-financiamiento="' + r.anios_financiamiento + '"><i data-feather="edit-2" width="14" height="14"></i> Editar</button>' +
                     '<button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '"><i data-feather="trash-2" width="14" height="14"></i> Eliminar</button>';
 
                 if (r.estado == 'Reservado') {
-                    opcionesHtml += '<button type="button" class="btn btn-secondary btn-xs btn_quitar_reserva" data-id="' + r.id + '"><i data-feather="user-x" width="14" height="14"></i> Quitar Reserva</button>';
+                    opcionesHtml += '<button type="button" class="btn btn-negro btn-xs btn_quitar_reserva" data-id="' + r.id + '"><i data-feather="user-x" width="14" height="14"></i> Quitar Reserva</button>';
                 } else {
-                    opcionesHtml += '<button type="button" class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#modal_reservar_lote" data-id="' + r.id + '"><i data-feather="user-plus" width="14" height="14"></i> Reservar</button>';
+                    opcionesHtml += '<button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_reservar_lote" data-id="' + r.id + '"><i data-feather="user-plus" width="14" height="14"></i> Reservar</button>';
                 }
 
                 opcionesHtml += '</div>';
             } else {
-                opcionesHtml = '<button class="btn btn-light btn-xs disabled" disabled><i data-feather="lock" width="14" height="14"></i> Bloqueado</button>';
+                opcionesHtml = '<button class="btn btn-negro btn-xs disabled" disabled><i data-feather="lock" width="14" height="14"></i> Bloqueado</button>';
             }
 
             return [
@@ -294,7 +300,7 @@
                 $("#div_cantidad_lotes").hide();
                 $("#lbl_lote_titulo").text("Lote Actual");
                 $("#lbl_lote_siguiente").text(triggerLink.data("nombre"));
-                $("#lbl_lote_siguiente").removeClass("btn-success").addClass("btn-info");
+                $("#lbl_lote_siguiente").removeClass("btn-azul").addClass("btn-azul-claro");
                 
                 $("#modal_lote_precio").val(triggerLink.data("precio"));
                 $("#modal_lote_norte").val(triggerLink.data("norte"));
@@ -311,7 +317,7 @@
                 }
                 $("#div_cantidad_lotes").show();
                 $("#lbl_lote_titulo").text("Siguiente Lote");
-                $("#lbl_lote_siguiente").removeClass("btn-info").addClass("btn-success");
+                $("#lbl_lote_siguiente").removeClass("btn-azul-claro").addClass("btn-azul");
                 $("#lbl_lote_siguiente").text('{{ $lote_siguiente->nombre }}');
 
                 $("#modal_lote_cantidad").val('1');
@@ -339,7 +345,7 @@
             var triggerLink = $(e.relatedTarget);
             id = triggerLink.data("id");
             bloque = triggerLink.data("bloque");
-            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-primary">' + bloque +
+            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-azul">' + bloque +
                 '</span></h4>');
         });
 

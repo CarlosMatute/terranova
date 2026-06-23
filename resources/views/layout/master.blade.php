@@ -17,7 +17,7 @@ License: For each use you must have a valid license purchased only from above li
 	<meta name="author" content="NobleUI">
 	<meta name="keywords" content="nobleui, bootstrap, bootstrap 5, bootstrap5, admin, dashboard, template, responsive, css, sass, html, laravel, theme, front-end, ui kit, web">
 
-  <title>Terranova</title>
+  <title>TERRANOVA</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,8 @@ License: For each use you must have a valid license purchased only from above li
   <!-- CSRF Token -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
   
-  <link rel="shortcut icon" href="{{ asset('/favicon.ico') }}">
+  {{-- <link rel="shortcut icon" href="{{ asset('/favicon.ico') }}"> --}}
+  <link rel="icon" type="image/png" href="{{ asset('/assets/images/terranova_logo.png') }}">
 
   <!-- plugin css -->
   <link href="{{ asset('assets/fonts/feather-font/css/iconfont.css') }}" rel="stylesheet" />
@@ -40,6 +41,65 @@ License: For each use you must have a valid license purchased only from above li
   <!-- common css -->
   <link href="{{ asset('css/app.css') }}" rel="stylesheet" />
   <!-- end common css -->
+
+  <style>
+    .sidebar { box-shadow: 2px 0 12px rgba(0,0,0,0.04); }
+    .sidebar .sidebar-header {
+      background: var(--ins-blanco);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      border-right: none;
+      padding: 18px 20px;
+    }
+    .sidebar .sidebar-header .sidebar-brand {
+      color: var(--ins-negro);
+      font-size: 20px;
+      font-family: 'ND LOGOS REGULAR', sans-serif;
+      letter-spacing: 1px;
+      -webkit-text-stroke: 0.6px currentColor;
+      text-shadow: 0 0 0.3px currentColor;
+      font-weight: 800;
+    }
+    .sidebar .sidebar-header .sidebar-toggler span { background: var(--ins-negro); }
+    .sidebar .sidebar-body {
+      background: var(--ins-blanco);
+      border-right: none;
+      padding: 12px 0;
+    }
+    .sidebar .sidebar-body .nav .nav-item { padding: 2px 12px; }
+    .sidebar .sidebar-body .nav .nav-item .nav-link {
+      color: var(--ins-negro);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      transition: all 0.25s ease;
+      font-weight: 450;
+      font-size: 0.9rem;
+    }
+    .sidebar .sidebar-body .nav .nav-item .nav-link .link-icon {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar .sidebar-body .nav .nav-item:hover .nav-link,
+    .sidebar .sidebar-body .nav .nav-item.active .nav-link {
+      color: #fff;
+      background: var(--ins-azul);
+    }
+    .sidebar .sidebar-body .nav .nav-item:hover .nav-link .link-icon,
+    .sidebar .sidebar-body .nav .nav-item.active .nav-link .link-icon {
+      color: #fff;
+      fill: rgba(255,255,255,0.2);
+    }
+    .sidebar .sidebar-body .nav .nav-item.active .nav-link::before { display: none; }
+    .sidebar .sidebar-body .nav .nav-item .nav-link .link-title {
+      position: relative;
+      top: 1px;
+    }
+  </style>
 
   @stack('style')
 </head>

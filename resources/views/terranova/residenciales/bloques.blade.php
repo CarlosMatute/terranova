@@ -3,6 +3,9 @@
 @push('plugin-styles')
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
+    <style>
+        .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
+    </style>
 @endpush
 
 @section('content')
@@ -15,16 +18,19 @@
 
     <div class="row">
         <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
+            <div class="card bg-azul text-white border-0 overflow-hidden" style="border-radius: 12px;">
+                <div class="card-body position-relative" style="background: linear-gradient(135deg, var(--ins-azul) 0%, var(--ins-azul-oscuro) 100%);">
                     <div class="d-flex align-items-start">
                         <img src="{{ asset('storage/residenciales/res_' . $residencial->id . '/' . $residencial->imagen) }}"
-                            class="wd-90 ht-90 me-3" alt="..."
+                            class="wd-70 ht-70 rounded me-3 border border-white border-2" alt="..."
                             onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
                         <div>
-                            <h3 class="mb-2">Residencial: {{ $residencial->nombre }}</h3>
-                            <p class="text-muted">Gestión de bloques para esta residencial.</p>
+                            <h3 class="mb-1 fw-bold text-white">Residencial: {{ $residencial->nombre }}</h3>
+                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Gestión de bloques para esta residencial.</p>
                         </div>
+                    </div>
+                    <div class="position-absolute end-0 top-0 opacity-10" style="transform: translate(20%, -20%);">
+                        <i data-feather="square" width="120" height="120" class="text-white"></i>
                     </div>
                 </div>
             </div>
@@ -33,12 +39,12 @@
 
     <div class="row">
         <div class="col-12 col-md-12 col-xl-12">
-            <div class="card border-secondary">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div class="card border-azul">
+                <div class="card-header bg-azul text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0">
                         <i class="text-white icon-lg pb-3px" data-feather="square"></i> Bloques Registrados
                     </h5>
-                    <button type="button" class="btn btn-light btn-xs" id="btn_agregar_bloque" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-blanco btn-xs" id="btn_agregar_bloque" data-bs-toggle="modal"
                         data-bs-target="#modal_agregar_bloque">
                         <i data-feather="plus" width="16" height="16"></i> Registrar Bloque
                     </button>
@@ -46,7 +52,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="jambo_table table table-hover" id="tbl_bloques" border="1">
-                            <thead class="bg-secondary">
+                            <thead class="bg-azul-oscuro">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
                                     <th scope="col" class="text-white">Bloque</th>
@@ -67,7 +73,7 @@
                                                         <i data-feather="trash-2" width="14" height="14"></i> Eliminar
                                                     </button>
                                                 @endif
-                                                <a href="{{ url('residenciales/' . $residencial->id . '/bloques/' . $row->id) }}" class="btn btn-success btn-xs">
+                                                <a href="{{ url('residenciales/' . $residencial->id . '/bloques/' . $row->id) }}" class="btn btn-azul btn-xs">
                                                     <i data-feather="grid" width="14" height="14"></i> Lotes
                                                 </a>
                                             </div>
@@ -86,7 +92,7 @@
     <div class="modal fade" id="modal_agregar_bloque" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header bg-dark">
+                <div class="modal-header bg-azul">
                     <h6 class="modal-title h6 text-white" id="myExtraLargeModalLabel"><i class="icon-lg pb-3px"
                             data-feather="plus"></i> Registrar Nuevo Bloque</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
@@ -100,7 +106,7 @@
                                         <div class="mb-3">
                                             <label for="modal_agregar_bloque_nombre" class="form-label">Siguiente
                                                 Bloque</label>
-                                            <button type="button" class="btn btn-primary form-control"
+                                            <button type="button" class="btn btn-azul form-control"
                                                 id="modal_agregar_bloque_siguiente"></button>
                                         </div>
                                     </div>
@@ -183,10 +189,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x"
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x"
                             width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_bloque"><i data-feather="save"
+                    <button type="button" class="btn btn-azul btn-xs" id="btn_guardar_bloque"><i data-feather="save"
                             width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
@@ -205,7 +211,7 @@
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Siguiente Bloque</label>
-                            <button type="button" class="btn btn-primary form-control">{{ $bloque_siguiente->nombre }}</button>
+                            <button type="button" class="btn btn-azul form-control">{{ $bloque_siguiente->nombre }}</button>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Cantidad Lotes</label>
@@ -229,9 +235,9 @@
                         <div class="col-md-6 mb-3"><label>Financiamiento (años)</label><input id="modal_bloque_finan" class="form-control" type="number" /></div>
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_confirmar_guardar"><i data-feather="save" width="16" height="16"></i> Guardar</button>
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-danger btn-xs" id="btn_confirmar_guardar"><i data-feather="save" width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
         </div>
@@ -464,7 +470,7 @@
 
                                 '<a href="' + baseUrl + '/residenciales/' + id_residencial + '/bloques/' +
                                 row.id +
-                                '" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
+                                '" class="btn btn-azul btn-xs" role="button" aria-pressed="true">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-grid"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Lotes' +
                                 '</a>' +
                                 '</div>'
@@ -477,7 +483,7 @@
                             var quitarBotonDT = '<div class="d-flex gap-1">' +
 
                                 '<a href="' + baseUrl + '/residenciales/' + id_residencial +
-                                '/bloques" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
+                                '/bloques" class="btn btn-azul btn-xs" role="button" aria-pressed="true">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Lotes' +
                                 '</a>' +
                                 '</div>';
@@ -499,7 +505,7 @@
                                 '</button>' +
 
                                 '<a href="' + baseUrl + '/residenciales/' + id_residencial +
-                                '/bloques" class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
+                                '/bloques" class="btn btn-azul btn-xs" role="button" aria-pressed="true">' +
                                 '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-log-in"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Lotes' +
                                 '</a>' +
                                 '</div>'

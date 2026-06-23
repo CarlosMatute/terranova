@@ -7,21 +7,26 @@
     <link href="{{ asset('assets/plugins/easymde/easymde.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <style>
+        .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
+    </style>
 @endpush
 
 @section('content')
     <style>
         .file-upload {
-            border: 2px dashed #ccc;
+            border: 2px dashed var(--ins-azul);
             border-radius: 10px;
             padding: 20px;
             text-align: center;
             cursor: pointer;
             transition: 0.2s;
+            color: var(--ins-azul);
         }
 
         .file-upload:hover {
-            background-color: #f9f9f9;
+            background-color: var(--ins-blanco-humo);
+            border-color: var(--ins-azul-oscuro);
         }
 
         .file-list {
@@ -29,7 +34,7 @@
         }
 
         .file-item {
-            background: #f2f2f2;
+            background: var(--ins-blanco);
             border-radius: 6px;
             padding: 8px 12px;
             margin-bottom: 5px;
@@ -37,6 +42,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 14px;
+            border: 1px solid var(--ins-azul-claro);
         }
 
         .file-item button {
@@ -50,12 +56,22 @@
     </style>
     <div class="row">
         <div class="col-md-12 grid-margin stretch-card">
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="mb-2">Residenciales</h3>
-                    <p class="text-muted">
-                        En este módulo puedes registrar y administrar todas las residenciales, sus bloques y sus lotes.
-                    </p>
+            <div class="card bg-azul text-white border-0 overflow-hidden" style="border-radius: 12px;">
+                <div class="card-body position-relative" style="background: linear-gradient(135deg, var(--ins-azul) 0%, var(--ins-azul-oscuro) 100%);">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15);">
+                                <i data-feather="home" width="28" height="28" class="text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="mb-1 fw-bold text-white">Residenciales</h3>
+                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Registra y administra todas las residenciales, sus bloques y sus lotes</p>
+                        </div>
+                    </div>
+                    <div class="position-absolute end-0 top-0 opacity-10" style="transform: translate(20%, -20%);">
+                        <i data-feather="home" width="120" height="120" class="text-white"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,12 +79,12 @@
 
     <div class="row">
         <div class="col-12 col-md-12 col-xl-12">
-            <div class="card border-secondary">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <div class="card border-azul">
+                <div class="card-header bg-azul text-white d-flex justify-content-between align-items-center">
                     <h5 class="text-white mb-0">
                         <i class="text-white icon-lg pb-3px" data-feather="home"></i> Residenciales Registradas
                     </h5>
-                    <button type="button" class="btn btn-light btn-xs" id="btn_agregar_residencial" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-blanco btn-xs" id="btn_agregar_residencial" data-bs-toggle="modal"
                         data-bs-target="#modal_agregar_residencial">
                         <i data-feather="plus" width="16" height="16"></i> Registrar Residencial
                     </button>
@@ -76,7 +92,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="jambo_table table table-hover" id="tbl_residenciales" border="1">
-                            <thead class="bg-secondary">
+                            <thead class="bg-azul-oscuro">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
                                     <th scope="col" class="text-white">Imagen</th>
@@ -100,7 +116,7 @@
                                         <td scope="row">{{ $row->nombre }}</td>
                                         <td scope="row">{{ $row->descripcion }}</td>
                                         <td scope="row">
-                                            <button type="button" class="btn btn-warning btn-xs"
+                                            <button type="button" class="btn btn-azul-claro btn-xs"
                                                 data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial"
                                                 data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}"
                                                 data-descripcion="{{ $row->descripcion }}">
@@ -112,7 +128,7 @@
                                                 data-descripcion="{{ $row->descripcion }}">
                                                 <i data-feather="trash-2" width="16" height="16"></i> Eliminar
                                             </button>
-                                            <a href="{{ url('residenciales/' . $row->id . '/bloques') }}" class="btn btn-success btn-xs" role="button" aria-pressed="true">
+                                            <a href="{{ url('residenciales/' . $row->id . '/bloques') }}" class="btn btn-azul btn-xs" role="button" aria-pressed="true">
                                                 <i data-feather="square" width="16" height="16"></i> Bloques
                                             </a>
                                         </td>
@@ -130,7 +146,7 @@
         aria-labelledby="mySmallModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header bg-dark">
+                <div class="modal-header bg-azul">
                     <h6 class="modal-title h6 text-white" id="myExtraLargeModalLabel"><i class="icon-lg pb-3px"
                             data-feather="plus"></i> Registrar Nueva Residencial</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
@@ -191,9 +207,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_guardar_residencial"><i data-feather="save" width="16" height="16"></i> Guardar</button>
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-azul btn-xs" id="btn_guardar_residencial"><i data-feather="save" width="16" height="16"></i> Guardar</button>
                 </div>
             </div>
         </div>
@@ -232,9 +248,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer bg-secondary">
-                    <button type="button" class="btn btn-danger btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-primary btn-xs" id="btn_eliminar_residencial"><i data-feather="trash-2" width="16" height="16"></i> Eliminar</button>
+                <div class="modal-footer bg-azul-oscuro">
+                    <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
+                    <button type="button" class="btn btn-danger btn-xs" id="btn_eliminar_residencial"><i data-feather="trash-2" width="16" height="16"></i> Eliminar</button>
                 </div>
             </div>
         </div>
@@ -561,7 +577,7 @@
                                 '<div class="d-flex gap-1">' +
 
                                     // EDITAR
-                                    '<button type="button" class="btn btn-warning btn-xs btn_editar_rol" ' +
+                                    '<button type="button" class="btn btn-azul-claro btn-xs btn_editar_rol" ' +
                                     'data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial" ' +
                                     'data-id="' + row.id + '" ' +
                                     'data-nombre="' + row.nombre + '" ' +
@@ -580,7 +596,7 @@
 
                                     // ENTRAR
                                     '<a href="residenciales/' + row.id + '/bloques" ' +
-                                    'class="btn btn-dark btn-xs">' +
+                                    'class="btn btn-azul btn-xs">' +
                                         '<i data-feather="log-in" width="14" height="14"></i> Entrar' +
                                     '</a>' +
 

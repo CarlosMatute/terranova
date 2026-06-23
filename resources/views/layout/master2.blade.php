@@ -17,7 +17,7 @@ License: For each use you must have a valid license purchased only from above li
 	<meta name="author" content="NobleUI">
 	<meta name="keywords" content="nobleui, bootstrap, bootstrap 5, bootstrap5, admin, dashboard, template, responsive, css, sass, html, laravel, theme, front-end, ui kit, web">
 
-  <title>Terranova</title>
+  <title>TERRANOVA</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,8 @@ License: For each use you must have a valid license purchased only from above li
   <!-- CSRF Token -->
   <meta name="csrf-token" content="{{ csrf_token() }}">
   
-  <link rel="shortcut icon" href="{{ asset('/favicon.ico') }}">
+  {{-- <link rel="shortcut icon" href="{{ asset('/favicon.ico') }}"> --}}
+  <link rel="icon" type="image/png" href="{{ asset('/assets/images/terranova_logo.png') }}">
 
   <!-- plugin css -->
   <link href="{{ asset('assets/fonts/feather-font/css/iconfont.css') }}" rel="stylesheet" />

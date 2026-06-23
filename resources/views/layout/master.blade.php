@@ -61,13 +61,13 @@ License: For each use you must have a valid license purchased only from above li
     }
     .sidebar .sidebar-header .sidebar-toggler span { background: var(--ins-negro); }
     .sidebar .sidebar-body {
-      background: var(--ins-blanco);
+      background: var(--ins-azul);
       border-right: none;
       padding: 12px 0;
     }
     .sidebar .sidebar-body .nav .nav-item { padding: 2px 12px; }
     .sidebar .sidebar-body .nav .nav-item .nav-link {
-      color: var(--ins-negro);
+      color: rgba(255,255,255,0.75);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -83,15 +83,16 @@ License: For each use you must have a valid license purchased only from above li
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      color: rgba(255,255,255,0.75);
     }
     .sidebar .sidebar-body .nav .nav-item:hover .nav-link,
     .sidebar .sidebar-body .nav .nav-item.active .nav-link {
-      color: #fff;
-      background: var(--ins-azul);
+      color: var(--ins-azul);
+      background: var(--ins-blanco);
     }
     .sidebar .sidebar-body .nav .nav-item:hover .nav-link .link-icon,
     .sidebar .sidebar-body .nav .nav-item.active .nav-link .link-icon {
-      color: #fff;
+      color: var(--ins-azul);
       fill: rgba(255,255,255,0.2);
     }
     .sidebar .sidebar-body .nav .nav-item.active .nav-link::before { display: none; }

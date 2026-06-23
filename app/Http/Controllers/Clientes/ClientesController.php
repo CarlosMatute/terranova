@@ -163,6 +163,11 @@ class ClientesController extends Controller
                 }
                 $msgSuccess = "Cliente " . $primer_nombre . " actualizado exitosamente.";
             }elseif($accion == 3){
+                $ventas = collect(DB::select("SELECT ID FROM VENTAS WHERE ID_CLIENTE = :id AND DELETED_AT IS NULL", ["id" => $id]));
+                if (count($ventas) > 0) {
+                    throw new Exception("No se puede eliminar el cliente porque tiene ventas asociadas.");
+                }
+
                 DB::select("UPDATE
                     PUBLIC.CLIENTES
                 SET
@@ -263,6 +268,66 @@ class ClientesController extends Controller
             "msgError" => $msgError,
             "clientes_list" => $clientes_list
         ]);
+    }
+
+    public function perfil_cliente($id)
+    {
+        $cliente = collect(DB::select("SELECT
+            ID,
+            PRIMER_NOMBRE,
+            SEGUNDO_NOMBRE,
+            PRIMER_APELLIDO,
+            SEGUNDO_APELLIDO,
+            TRIM(
+                COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
+                COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
+                COALESCE(TRIM(PRIMER_APELLIDO) || ' ', '') || 
+                COALESCE(TRIM(SEGUNDO_APELLIDO) || ' ', '')
+            ) AS NOMBRE_COMPLETO,
+            IDENTIDAD,
+            CONTACTO_TELEFONICO,
+            CONTACTO_TELEFONICO_2,
+            CORREO_ELECTRONICO,
+            DIRECCION,
+            IMAGEN
+        FROM
+            CLIENTES
+        WHERE
+            DELETED_AT IS NULL
+            AND ID = :id", ["id" => $id]))->first();
+
+        if (!$cliente) {
+            abort(404);
+        }
+
+        $ventas = DB::select("SELECT 
+            V.ID,
+            V.FECHA_VENTA,
+            TP.NOMBRE AS TIPO_PAGO,
+            EV.NOMBRE AS ESTADO,
+            V.TOTAL_CONTADO,
+            V.PRIMA,
+            V.TOTAL_INTERESES,
+            V.TOTAL_PAGAR,
+            V.CUOTA_MENSUAL
+        FROM 
+            VENTAS V
+            JOIN CATALOGO_TIPO_PAGO TP ON V.TIPO_PAGO = TP.ID
+            JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
+        WHERE 
+            V.DELETED_AT IS NULL
+            AND V.ID_CLIENTE = :id
+        ORDER BY 
+            V.CREATED_AT DESC", ["id" => $id]);
+
+        $referencias = DB::select("SELECT ID, NOMBRE_COMPLETO, CONTACTO_TELEFONICO, DIRECCION FROM PUBLIC.REFERENCIAS WHERE ID_CLIENTE = :id AND DELETED_AT IS NULL", ["id" => $id]);
+        $beneficiarios = DB::select("SELECT ID, NOMBRE_COMPLETO, IDENTIDAD, PARENTEZCO, CONTACTO_TELEFONICO, CONTACTO_TELEFONICO_2, CORREO_ELECTRONICO, DIRECCION FROM PUBLIC.BENEFICIARIOS WHERE ID_CLIENTE = :id AND DELETED_AT IS NULL", ["id" => $id]);
+
+        return view('terranova.clientes.perfil')
+            ->with('cliente', $cliente)
+            ->with('ventas', $ventas)
+            ->with('referencias', $referencias)
+            ->with('beneficiarios', $beneficiarios);
     }
 
     public function obtener_referencias(Request $request)

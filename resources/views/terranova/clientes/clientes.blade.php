@@ -71,6 +71,9 @@
                                         <td>{{ $row->contacto_telefonico }}</td>
                                         <td>
                                             <div class="d-flex gap-1">
+                                                <a href="{{ url('clientes/perfil/' . $row->id) }}" class="btn btn-azul btn-xs">
+                                                    <i data-feather="user" width="14" height="14"></i> Perfil
+                                                </a>
                                                 <button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente"
                                                     data-id="{{ $row->id }}"
                                                     data-pnombre="{{ $row->primer_nombre }}" data-snombre="{{ $row->segundo_nombre }}"
@@ -271,6 +274,9 @@
 
             var opcionesHtml =
                 '<div class="d-flex gap-1">' +
+                    '<a href="{{ url('clientes/perfil') }}/' + r.id + '" class="btn btn-azul btn-xs">' +
+                        '<i data-feather="user" width="14" height="14"></i> Perfil' +
+                    '</a> ' +
                     '<button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente" ' +
                         'data-id="' + r.id + '" ' +
                         'data-pnombre="' + (r.primer_nombre || '') + '" ' +

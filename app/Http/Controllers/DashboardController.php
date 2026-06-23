@@ -10,14 +10,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Actualizar estados de cobros atrasados
-        DB::select("UPDATE FECHAS_COBROS SET ESTADO = 'Atrasado' 
-            WHERE ESTADO != 'Pagado' AND FECHA_COBRO < CURRENT_DATE");
-        
-        DB::select("UPDATE FECHAS_COBROS SET ESTADO = 'Dia de cobro' 
-            WHERE ESTADO != 'Pagado' AND FECHA_COBRO = CURRENT_DATE");
-
-        // Estadísticas del mes actual
+        // EstadÃ­sticas del mes actual
         $stats = collect(DB::select("
             WITH TOTAL AS (
                 SELECT COALESCE(SUM(V.CUOTA_MENSUAL), 0) AS TOTAL_COBRAR
@@ -27,7 +20,7 @@ class DashboardController extends Controller
             ), PAGADO AS (
                 SELECT COALESCE(SUM(CANTIDAD_PAGO), 0) AS TOTAL_PAGADO
                 FROM FECHAS_COBROS
-                WHERE TO_CHAR(FECHA_COBRO, 'MM-YYYY') = TO_CHAR(NOW(), 'MM-YYYY') AND ESTADO = 'Pagado'
+                WHERE TO_CHAR(FECHA_COBRO, 'MM-YYYY') = TO_CHAR(NOW(), 'MM-YYYY') AND FECHA_PAGO IS NOT NULL
             )
             SELECT 
                 TO_CHAR(NOW(), 'Month') AS MES_ACTUAL,
@@ -41,7 +34,9 @@ class DashboardController extends Controller
         // Conteos generales
         $lotes_disponibles = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM LOTES WHERE ID_CLIENTE_RESERVAR IS NULL AND DELETED_AT IS NULL"))->first();
         $clientes_totales = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM CLIENTES WHERE DELETED_AT IS NULL"))->first();
-        $ventas_activas = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM VENTAS WHERE ESTADO = 'Pendiente' AND DELETED_AT IS NULL"))->first();
+        $ventas_activas = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM VENTAS V
+            JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
+            WHERE EV.NOMBRE = 'Pendiente' AND V.DELETED_AT IS NULL"))->first();
 
         return view('dashboard')
         ->with('stats', $stats)

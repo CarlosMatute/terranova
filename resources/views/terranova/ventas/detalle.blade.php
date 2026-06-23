@@ -1,6 +1,7 @@
 @extends('layout.master')
 
 @push('plugin-styles')
+    <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <style>
         .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
     </style>
@@ -26,7 +27,7 @@
                         </div>
                         <div>
                             <h3 class="mb-1 fw-bold text-white">Detalle de Venta #{{ $venta->id }}</h3>
-                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Cliente: {{ $venta->cliente_nombre }}</p>
+                            <p class="mb-0 text-white-50" style="opacity: 0.8;">Información detallada de la venta, lotes adquiridos y plan de pagos.</p>
                         </div>
                     </div>
                     <div class="position-absolute end-0 top-0 opacity-10" style="transform: translate(20%, -20%);">
@@ -69,9 +70,14 @@
                 </div>
                 <div class="card-body">
                     @foreach ($lotes as $l)
-                        <div class="p-2 border-bottom">
-                            <strong>{{ $l->residencial }}</strong><br>
-                            <small>Bloque {{ $l->bloque }} - Lote {{ $l->nombre }}</small>
+                        <div class="d-flex align-items-center p-2 border-bottom">
+                            <img src="{{ asset('storage/residenciales/res_' . $l->id_residencial . '/' . $l->residencial_imagen) }}" 
+                                class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;"
+                                onerror="this.onerror=null; this.src='{{ asset('/assets/images/homes.png') }}';">
+                            <div>
+                                <strong>{{ $l->residencial }}</strong><br>
+                                <small>Bloque {{ $l->bloque }} - Lote {{ $l->nombre }}</small>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -85,7 +91,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="jambo_table table table-hover" id="tbl_plan_pagos" border="1">
                             <thead class="bg-azul-oscuro text-white">
                                 <tr>
                                     <th class="text-white">#</th>
@@ -126,9 +132,18 @@
     </div>
 @endsection
 
+@push('plugin-scripts')
+    <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
+    <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
+@endpush
+
 @push('custom-scripts')
     <script>
         $(document).ready(function() {
+            $('#tbl_plan_pagos').DataTable({
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" }
+            });
+
             $('.btn_pagar').on('click', function() {
                 var id = $(this).data('id');
                 Swal.fire({

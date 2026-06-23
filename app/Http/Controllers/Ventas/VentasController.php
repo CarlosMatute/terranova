@@ -22,15 +22,17 @@ class VentasController extends Controller
                 COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
                 COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
             ) AS CLIENTE,
-            V.TIPO_PAGO,
-            V.ESTADO,
+            TP.NOMBRE AS TIPO_PAGO,
+            EV.NOMBRE AS ESTADO,
             V.TOTAL_PAGAR
         FROM 
             VENTAS V
             JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            JOIN CATALOGO_TIPO_PAGO TP ON V.TIPO_PAGO = TP.ID
+            JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
         WHERE 
             V.DELETED_AT IS NULL
-            AND V.ESTADO = 'Pendiente'
+            AND EV.NOMBRE = 'Pendiente'
         ORDER BY 
             V.CREATED_AT DESC");
 
@@ -43,15 +45,17 @@ class VentasController extends Controller
                 COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
                 COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
             ) AS CLIENTE,
-            V.TIPO_PAGO,
-            V.ESTADO,
+            TP.NOMBRE AS TIPO_PAGO,
+            EV.NOMBRE AS ESTADO,
             V.TOTAL_PAGAR
         FROM 
             VENTAS V
             JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            JOIN CATALOGO_TIPO_PAGO TP ON V.TIPO_PAGO = TP.ID
+            JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
         WHERE 
             V.DELETED_AT IS NULL
-            AND V.ESTADO = 'Pagado'
+            AND EV.NOMBRE = 'Pagado'
         ORDER BY 
             V.CREATED_AT DESC");
 
@@ -112,7 +116,9 @@ class VentasController extends Controller
                 throw new Exception("Debe seleccionar al menos un lote.");
             }
 
-            $estado = ($tipo_pago == 'Contado') ? 'Pagado' : 'Pendiente';
+            $tipo_pago_id = collect(DB::select("SELECT ID FROM CATALOGO_TIPO_PAGO WHERE NOMBRE = :nombre", ['nombre' => $tipo_pago]))->first()->id;
+            $estado_codigo = ($tipo_pago == 'Contado') ? 'Pagado' : 'Pendiente';
+            $estado_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = :nombre", ['nombre' => $estado_codigo]))->first()->id;
 
             $venta = collect(DB::select("INSERT INTO PUBLIC.VENTAS (
                 ID_CLIENTE, TIPO_PAGO, ESTADO, TOTAL_CONTADO, ANIOS_FINANCIAMIENTO,
@@ -124,8 +130,8 @@ class VentasController extends Controller
                 :cuota_mensual, :dia_cobro_mes, :fecha_venta
             ) RETURNING ID", [
                 'id_cliente' => $id_cliente,
-                'tipo_pago' => $tipo_pago,
-                'estado' => $estado,
+                'tipo_pago' => $tipo_pago_id,
+                'estado' => $estado_id,
                 'total_contado' => $total_contado,
                 'anios_financiamiento' => $anios_financiamiento,
                 'tasa_interes' => $tasa_interes,
@@ -161,7 +167,7 @@ class VentasController extends Controller
                     $fecha_pago = clone $fecha_base;
                     $fecha_pago->modify("+$i month");
                     
-                    DB::select("INSERT INTO FECHAS_COBROS (ID_VENTA, FECHA_COBRO, ESTADO) VALUES (:id_venta, :fecha_cobro, 'Pendiente')", [
+                    DB::select("INSERT INTO FECHAS_COBROS (ID_VENTA, FECHA_COBRO) VALUES (:id_venta, :fecha_cobro)", [
                         'id_venta' => $id_venta,
                         'fecha_cobro' => $fecha_pago->format('Y-m-d')
                     ]);
@@ -179,7 +185,23 @@ class VentasController extends Controller
     public function ver_detalle_venta($id)
     {
         $venta = collect(DB::select("SELECT 
-            V.*,
+            V.ID,
+            V.ID_CLIENTE,
+            TP.NOMBRE AS TIPO_PAGO,
+            EV.NOMBRE AS ESTADO,
+            V.TOTAL_CONTADO,
+            V.ANIOS_FINANCIAMIENTO,
+            V.TASA_INTERES,
+            V.PRIMA,
+            V.CUOTAS,
+            V.TOTAL_INTERESES,
+            V.TOTAL_PAGAR,
+            V.CUOTA_MENSUAL,
+            V.DIA_COBRO_MES,
+            V.FECHA_VENTA,
+            V.CREATED_AT,
+            V.UPDATED_AT,
+            V.DELETED_AT,
             TRIM(
                 COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') || 
                 COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') || 
@@ -190,15 +212,25 @@ class VentasController extends Controller
         FROM 
             VENTAS V
             JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            JOIN CATALOGO_TIPO_PAGO TP ON V.TIPO_PAGO = TP.ID
+            JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
         WHERE 
             V.ID = :id", ['id' => $id]))->first();
 
-        $cobros = DB::select("SELECT * FROM FECHAS_COBROS WHERE ID_VENTA = :id ORDER BY FECHA_COBRO ASC", ['id' => $id]);
+        $cobros = DB::select("SELECT *,
+            CASE 
+                WHEN FECHA_PAGO IS NOT NULL THEN 'Pagado'
+                WHEN FECHA_COBRO < CURRENT_DATE THEN 'Atrasado'
+                ELSE 'Pendiente'
+            END AS ESTADO
+        FROM FECHAS_COBROS WHERE ID_VENTA = :id ORDER BY FECHA_COBRO ASC", ['id' => $id]);
 
         $lotes = DB::select("SELECT 
             L.*,
             B.NOMBRE AS BLOQUE,
-            R.NOMBRE AS RESIDENCIAL
+            R.NOMBRE AS RESIDENCIAL,
+            R.IMAGEN AS RESIDENCIAL_IMAGEN,
+            BR.ID_RESIDENCIAL
         FROM 
             LOTES_VENDIDOS LV
             JOIN LOTES L ON LV.ID_LOTE = L.ID
@@ -222,7 +254,6 @@ class VentasController extends Controller
             $venta = collect(DB::select("SELECT CUOTA_MENSUAL FROM VENTAS WHERE ID = :id_venta", ['id' => $cuota->id_venta]))->first();
 
             DB::select("UPDATE FECHAS_COBROS SET 
-                ESTADO = 'Pagado',
                 FECHA_PAGO = NOW(),
                 CANTIDAD_PAGO = :monto,
                 UPDATED_AT = NOW()
@@ -231,10 +262,14 @@ class VentasController extends Controller
                 'monto' => $venta->cuota_mensual
             ]);
 
-            $restantes = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM FECHAS_COBROS WHERE ID_VENTA = :id_venta AND ESTADO != 'Pagado'", ['id_venta' => $cuota->id_venta]))->first();
+            $restantes = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM FECHAS_COBROS WHERE ID_VENTA = :id_venta AND FECHA_PAGO IS NULL", ['id_venta' => $cuota->id_venta]))->first();
             
             if ($restantes->total == 0) {
-                DB::select("UPDATE VENTAS SET ESTADO = 'Pagado', UPDATED_AT = NOW() WHERE ID = :id_venta", ['id_venta' => $cuota->id_venta]);
+                $pagado_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Pagado'"))->first()->id;
+                DB::select("UPDATE VENTAS SET ESTADO = :estado, UPDATED_AT = NOW() WHERE ID = :id_venta", [
+                    'estado' => $pagado_id,
+                    'id_venta' => $cuota->id_venta
+                ]);
             }
 
             return response()->json(['msgSuccess' => 'Cuota pagada correctamente.']);

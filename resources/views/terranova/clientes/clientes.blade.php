@@ -58,38 +58,7 @@
                                     <th scope="col" class="text-white">Opciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @foreach ($clientes as $row)
-                                    <tr style="font-size: small">
-                                        <td>{{ $row->id }}</td>
-                                        <td>
-                                            <img class="wd-30 ht-30 rounded-circle" src="{{ asset('storage/clientes/cli_' . $row->id . '/' . $row->imagen) }}" 
-                                                onerror="this.onerror=null; this.src='{{ asset('/assets/images/placeholder_user.png') }}';">
-                                        </td>
-                                        <td>{{ $row->nombre_completo }}</td>
-                                        <td>{{ $row->identidad }}</td>
-                                        <td>{{ $row->contacto_telefonico }}</td>
-                                        <td>
-                                            <div class="d-flex gap-1">
-                                                <a href="{{ url('clientes/perfil/' . $row->id) }}" class="btn btn-azul btn-xs">
-                                                    <i data-feather="user" width="14" height="14"></i> Perfil
-                                                </a>
-                                                <button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente"
-                                                    data-id="{{ $row->id }}"
-                                                    data-pnombre="{{ $row->primer_nombre }}" data-snombre="{{ $row->segundo_nombre }}"
-                                                    data-papellido="{{ $row->primer_apellido }}" data-sapellido="{{ $row->segundo_apellido }}"
-                                                    data-identidad="{{ $row->identidad }}" data-tel1="{{ $row->contacto_telefonico }}"
-                                                    data-tel2="{{ $row->contacto_telefonico_2 }}" data-email="{{ $row->correo_electronico }}" data-dir="{{ $row->direccion }}" data-imagen="{{ $row->imagen }}">
-                                                    <i data-feather="edit-2" width="14" height="14"></i> Editar
-                                                </button>
-                                                <button type="button" class="btn btn-danger btn-xs btn_eliminar_cliente" data-id="{{ $row->id }}" data-nombre="{{ $row->nombre_completo }}">
-                                                    <i data-feather="trash-2" width="14" height="14"></i> Eliminar
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
@@ -253,7 +222,6 @@
         var table = null;
         var accion = 1;
         var id_cliente = null;
-        var rowIndexEditar = null;
         var btn_activo = true;
 
         var referencias = [];
@@ -267,44 +235,8 @@
             return $('meta[name="csrf-token"]').attr('content');
         }
 
-        function construirFilaCliente(r) {
-            var nombreCompleto = ((r.primer_nombre || '') + ' ' + (r.segundo_nombre || '') + ' ' + (r.primer_apellido || '') + ' ' + (r.segundo_apellido || '')).replace(/\s+/g, ' ').trim();
-            var imgSrc = '{{ asset("storage/clientes/cli_") }}' + r.id + '/' + (r.imagen || '');
-            var imgOnError = "this.onerror=null; this.src='{{ asset('/assets/images/placeholder_user.png') }}';";
-
-            var opcionesHtml =
-                '<div class="d-flex gap-1">' +
-                    '<a href="{{ url('clientes/perfil') }}/' + r.id + '" class="btn btn-azul btn-xs">' +
-                        '<i data-feather="user" width="14" height="14"></i> Perfil' +
-                    '</a> ' +
-                    '<button type="button" class="btn btn-azul-claro btn-xs" data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente" ' +
-                        'data-id="' + r.id + '" ' +
-                        'data-pnombre="' + (r.primer_nombre || '') + '" ' +
-                        'data-snombre="' + (r.segundo_nombre || '') + '" ' +
-                        'data-papellido="' + (r.primer_apellido || '') + '" ' +
-                        'data-sapellido="' + (r.segundo_apellido || '') + '" ' +
-                        'data-identidad="' + (r.identidad || '') + '" ' +
-                        'data-tel1="' + (r.contacto_telefonico || '') + '" ' +
-                        'data-tel2="' + (r.contacto_telefonico_2 || '') + '" ' +
-                        'data-email="' + (r.correo_electronico || '') + '" ' +
-                        'data-dir="' + (r.direccion || '') + '" ' +
-                        'data-imagen="' + (r.imagen || '') + '">' +
-                        '<i data-feather="edit-2" width="14" height="14"></i> Editar' +
-                    '</button> ' +
-                    '<button type="button" class="btn btn-danger btn-xs btn_eliminar_cliente" ' +
-                        'data-id="' + r.id + '" data-nombre="' + (r.nombre_completo || nombreCompleto) + '">' +
-                        '<i data-feather="trash-2" width="14" height="14"></i> Eliminar' +
-                    '</button>' +
-                '</div>';
-
-            return [
-                r.id,
-                '<img class="wd-30 ht-30 rounded-circle" src="' + imgSrc + '" onerror="' + imgOnError + '">',
-                r.nombre_completo || nombreCompleto,
-                r.identidad || '',
-                r.contacto_telefonico || '',
-                opcionesHtml
-            ];
+        function escHtml(str) {
+            return $('<div>').text(str).html();
         }
 
         function renderReferencias() {
@@ -346,7 +278,6 @@
         function limpiarModal() {
             accion = 1;
             id_cliente = null;
-            rowIndexEditar = null;
             referencias = [];
             beneficiarios = [];
             refTempId = 0;
@@ -396,7 +327,64 @@
             $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': csrfToken() } });
             table = $('#tbl_clientes').DataTable({
                 responsive: true,
-                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" }
+                serverSide: true,
+                processing: true,
+                ajax: {
+                    url: "{{ url('/clientes/datos') }}",
+                    type: "GET"
+                },
+                columns: [
+                    { data: 'id', name: 'id' },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            var imgSrc = '{{ asset("storage/clientes/cli_") }}' + row.id + '/' + (row.imagen || '');
+                            return '<img class="wd-30 ht-30 rounded-circle" src="' + imgSrc + '" onerror="this.onerror=null; this.src=\'{{ asset('/assets/images/placeholder_user.png') }}\';">';
+                        }
+                    },
+                    { data: 'nombre_completo', name: 'nombre_completo' },
+                    { data: 'identidad', name: 'identidad' },
+                    { data: 'contacto_telefonico', name: 'contacto_telefonico' },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function(data, type, row) {
+                            var nombreCompleto = ((row.primer_nombre || '') + ' ' + (row.segundo_nombre || '') + ' ' + (row.primer_apellido || '') + ' ' + (row.segundo_apellido || '')).replace(/\s+/g, ' ').trim();
+                            return '<div class="d-flex gap-1">' +
+                                '<a href="{{ url('clientes/perfil') }}/' + row.id + '" class="btn btn-azul btn-xs">' +
+                                    '<i data-feather="user" width="14" height="14"></i> Perfil' +
+                                '</a> ' +
+                                '<button type="button" class="btn btn-azul-claro btn-xs btn_editar_cliente" ' +
+                                    'data-id="' + row.id + '" ' +
+                                    'data-pnombre="' + escHtml(row.primer_nombre || '') + '" ' +
+                                    'data-snombre="' + escHtml(row.segundo_nombre || '') + '" ' +
+                                    'data-papellido="' + escHtml(row.primer_apellido || '') + '" ' +
+                                    'data-sapellido="' + escHtml(row.segundo_apellido || '') + '" ' +
+                                    'data-identidad="' + escHtml(row.identidad || '') + '" ' +
+                                    'data-tel1="' + escHtml(row.contacto_telefonico || '') + '" ' +
+                                    'data-tel2="' + escHtml(row.contacto_telefonico_2 || '') + '" ' +
+                                    'data-email="' + escHtml(row.correo_electronico || '') + '" ' +
+                                    'data-dir="' + escHtml(row.direccion || '') + '" ' +
+                                    'data-imagen="' + (row.imagen || '') + '" ' +
+                                    'data-bs-toggle="modal" data-bs-target="#modal_agregar_cliente">' +
+                                    '<i data-feather="edit-2" width="14" height="14"></i> Editar' +
+                                '</button> ' +
+                                '<button type="button" class="btn btn-danger btn-xs btn_eliminar_cliente" ' +
+                                    'data-id="' + row.id + '" data-nombre="' + nombreCompleto + '">' +
+                                    '<i data-feather="trash-2" width="14" height="14"></i> Eliminar' +
+                                '</button>' +
+                            '</div>';
+                        }
+                    }
+                ],
+                order: [[2, 'asc']],
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" },
+                drawCallback: function() {
+                    feather.replace();
+                }
             });
         });
 
@@ -443,8 +431,7 @@
             limpiarModal();
         });
 
-        $(document).on("click", "[data-bs-target='#modal_agregar_cliente']", function() {
-            if ($(this).attr('id') == 'btn_agregar_cliente') return;
+        $(document).on("click", ".btn_editar_cliente", function() {
             accion = 2;
             id_cliente = $(this).data("id");
             $("#modal_cliente_titulo").text("Editar Cliente ID: " + id_cliente);
@@ -474,9 +461,6 @@
             } else {
                 $("#cli_img_preview").attr("src", "{{ asset('/assets/images/placeholder_user.png') }}");
             }
-
-            var tr = $(this).closest('tr');
-            rowIndexEditar = table.row(tr).index();
         });
 
         // Referencias
@@ -672,19 +656,9 @@
                         ToastLG.fire({ icon: 'error', title: 'Error al Guardar', html: res.msgError, timer: null });
                         return;
                     }
-                    if (res.clientes_list) {
-                        var nuevaFila = construirFilaCliente(res.clientes_list);
-                        if (accion == 1) {
-                            table.row.add(nuevaFila).draw();
-                        } else if (accion == 2) {
-                            table.row(rowIndexEditar).data(nuevaFila).draw();
-                        }
-                        feather.replace();
-                    } else {
-                        location.reload();
-                    }
                     $("#modal_agregar_cliente").modal("hide");
                     btn_activo = true;
+                    table.ajax.reload();
                     ToastLG.fire({ icon: 'success', title: 'Datos Guardados', html: res.msgSuccess, timer: 2000 });
                 },
                 error: function() {
@@ -696,8 +670,6 @@
         $(document).on("click", ".btn_eliminar_cliente", function() {
             var id = $(this).data("id");
             var nombre = $(this).data("nombre");
-            var tr = $(this).closest('tr');
-            var rowIndexEliminar = table.row(tr).index();
 
             Swal.fire({
                 title: '¿Eliminar cliente ' + nombre + '?',
@@ -717,7 +689,7 @@
                                 ToastLG.fire({ icon: 'error', title: 'Error al Eliminar', html: res.msgError, timer: null });
                                 return;
                             }
-                            table.row(rowIndexEliminar).remove().draw();
+                            table.ajax.reload();
                             ToastLG.fire({ icon: 'success', title: 'Cliente Eliminado', html: res.msgSuccess, timer: 2000 });
                         }
                     });

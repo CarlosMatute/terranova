@@ -35,6 +35,8 @@ Route::middleware('auth')->group(function () {
 
     Route::group(['prefix' => 'clientes'], function(){
         Route::get('/', [ClientesController::class, 'ver_clientes']);
+        Route::get('/datos', [ClientesController::class, 'datos_clientes']);
+        Route::get('/buscar', [ClientesController::class, 'buscar_clientes']);
         Route::post('/guardar', [ClientesController::class, 'guardar_cliente']);
         Route::post('/obtener-referencias', [ClientesController::class, 'obtener_referencias']);
         Route::post('/obtener-beneficiarios', [ClientesController::class, 'obtener_beneficiarios']);

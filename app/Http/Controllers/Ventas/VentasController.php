@@ -66,8 +66,6 @@ class VentasController extends Controller
 
     public function ver_vender()
     {
-        $clientes = DB::select("SELECT ID, IDENTIDAD, IMAGEN, TRIM(PRIMER_NOMBRE || ' ' || COALESCE(SEGUNDO_NOMBRE, '') || ' ' || PRIMER_APELLIDO || ' ' || COALESCE(SEGUNDO_APELLIDO, '')) AS NOMBRE FROM CLIENTES WHERE DELETED_AT IS NULL ORDER BY PRIMER_NOMBRE ASC");
-
         $lotes_disponibles = DB::select("SELECT 
             L.ID,
             L.NOMBRE AS LOTE,
@@ -90,7 +88,6 @@ class VentasController extends Controller
             R.NOMBRE, B.NOMBRE, L.ID");
 
         return view('terranova.ventas.vender')
-        ->with('clientes', $clientes)
         ->with('lotes_disponibles', $lotes_disponibles);
     }
 

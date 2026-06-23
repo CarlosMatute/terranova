@@ -270,6 +270,140 @@ class ClientesController extends Controller
         ]);
     }
 
+    public function datos_clientes(Request $request)
+    {
+        $id_user = Auth::id();
+        $draw = (int) $request->input('draw');
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 10);
+        $search = $request->input('search.value', '');
+        $orderColIdx = (int) $request->input('order.0.column', 2);
+        $orderDir = $request->input('order.0.dir', 'asc');
+
+        $where = "DELETED_AT IS NULL AND ID_USER = :id_user";
+        $params = ['id_user' => $id_user];
+
+        if (!empty($search)) {
+            $where .= " AND (
+                TRIM(
+                    COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(PRIMER_APELLIDO) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_APELLIDO) || ' ', '')
+                ) ILIKE :search1
+                OR IDENTIDAD ILIKE :search2
+                OR CONTACTO_TELEFONICO ILIKE :search3
+            )";
+            $term = '%' . $search . '%';
+            $params['search1'] = $term;
+            $params['search2'] = $term;
+            $params['search3'] = $term;
+        }
+
+        $total = DB::select("SELECT COUNT(*) AS total FROM CLIENTES WHERE DELETED_AT IS NULL AND ID_USER = :id_user", ['id_user' => $id_user])[0]->total;
+
+        $filtered = DB::select("SELECT COUNT(*) AS total FROM CLIENTES WHERE {$where}", $params)[0]->total;
+
+        $orderMap = [
+            0 => 'ID',
+            2 => 'PRIMER_NOMBRE, SEGUNDO_NOMBRE, PRIMER_APELLIDO, SEGUNDO_APELLIDO',
+            3 => 'IDENTIDAD',
+            4 => 'CONTACTO_TELEFONICO',
+        ];
+        $orderCol = $orderMap[$orderColIdx] ?? 'PRIMER_NOMBRE, SEGUNDO_NOMBRE';
+        $orderDirSql = strtoupper($orderDir) === 'DESC' ? 'DESC NULLS LAST' : 'ASC NULLS LAST';
+
+        $data = DB::select("
+            SELECT
+                ID,
+                PRIMER_NOMBRE,
+                SEGUNDO_NOMBRE,
+                PRIMER_APELLIDO,
+                SEGUNDO_APELLIDO,
+                TRIM(
+                    COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(PRIMER_APELLIDO) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_APELLIDO) || ' ', '')
+                ) AS NOMBRE_COMPLETO,
+                IDENTIDAD,
+                CONTACTO_TELEFONICO,
+                CONTACTO_TELEFONICO_2,
+                CORREO_ELECTRONICO,
+                DIRECCION,
+                IMAGEN
+            FROM CLIENTES
+            WHERE {$where}
+            ORDER BY {$orderCol} {$orderDirSql}
+            LIMIT {$length} OFFSET {$start}
+        ", $params);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => (int) $total,
+            'recordsFiltered' => (int) $filtered,
+            'data' => $data
+        ]);
+    }
+
+    public function buscar_clientes(Request $request)
+    {
+        $search = $request->input('q', '');
+        $page = (int) $request->input('page', 1);
+        $limit = 15;
+        $offset = ($page - 1) * $limit;
+
+        $where = "DELETED_AT IS NULL";
+        $params = [];
+
+        if (!empty($search)) {
+            $where .= " AND (
+                TRIM(
+                    COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(PRIMER_APELLIDO) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_APELLIDO) || ' ', '')
+                ) ILIKE :search1
+                OR IDENTIDAD ILIKE :search2
+            )";
+            $term = '%' . $search . '%';
+            $params['search1'] = $term;
+            $params['search2'] = $term;
+        }
+
+        $total = DB::select("SELECT COUNT(*) AS total FROM CLIENTES WHERE {$where}", $params)[0]->total;
+
+        $clientes = DB::select("
+            SELECT ID, IDENTIDAD, IMAGEN,
+                TRIM(
+                    COALESCE(TRIM(PRIMER_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(PRIMER_APELLIDO) || ' ', '') || 
+                    COALESCE(TRIM(SEGUNDO_APELLIDO) || ' ', '')
+                ) AS NOMBRE
+            FROM CLIENTES
+            WHERE {$where}
+            ORDER BY PRIMER_NOMBRE ASC
+            LIMIT {$limit} OFFSET {$offset}
+        ", $params);
+
+        $results = array_map(function($c) {
+            return [
+                'id' => $c->id,
+                'text' => $c->nombre . ' - ' . $c->identidad,
+                'identidad' => $c->identidad,
+                'imagen' => $c->imagen
+            ];
+        }, $clientes);
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => [
+                'more' => ($offset + $limit) < $total
+            ]
+        ]);
+    }
+
     public function perfil_cliente($id)
     {
         $cliente = collect(DB::select("SELECT

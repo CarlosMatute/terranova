@@ -92,9 +92,6 @@
                         <label class="form-label">Cliente</label>
                         <select class="form-select select2" id="id_cliente">
                             <option value="">Seleccione un cliente...</option>
-                            @foreach ($clientes as $c)
-                                <option value="{{ $c->id }}" data-identidad="{{ $c->identidad ?? '' }}" data-imagen="{{ $c->imagen ?? '' }}">{{ $c->nombre }} - {{ $c->identidad ?? '' }}</option>
-                            @endforeach
                         </select>
                     </div>
 
@@ -165,7 +162,7 @@
         $(document).ready(function() {
             function formatCliente(cliente) {
                 if (!cliente.id) return cliente.text;
-                var imgSrc = '{{ asset("storage/clientes/cli_") }}' + cliente.id + '/' + ($(cliente.element).attr('data-imagen') || '');
+                var imgSrc = '{{ asset("storage/clientes/cli_") }}' + cliente.id + '/' + (cliente.imagen || '');
                 return '<img src="' + imgSrc + '" onerror="this.src=\'{{ asset("/assets/images/placeholder_user.png") }}\'" class="rounded-circle me-2" style="width: 28px; height: 28px; object-fit: cover;"> <span>' + cliente.text + '</span>';
             }
 
@@ -173,14 +170,22 @@
                 templateResult: formatCliente,
                 templateSelection: formatCliente,
                 escapeMarkup: function(m) { return m; },
-                matcher: function(params, data) {
-                    if ($.trim(params.term) === '') return data;
-                    var term = params.term.toLowerCase();
-                    var text = data.text.toLowerCase();
-                    var identidad = ($(data.element).attr('data-identidad') || '').toLowerCase();
-                    if (text.indexOf(term) > -1 || identidad.indexOf(term) > -1) return data;
-                    return null;
-                }
+                ajax: {
+                    url: "{{ url('/clientes/buscar') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return { q: params.term, page: params.page || 1 };
+                    },
+                    processResults: function(data, params) {
+                        return {
+                            results: data.results,
+                            pagination: data.pagination
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 1
             });
             $('#sel_lote_buscador').select2();
 

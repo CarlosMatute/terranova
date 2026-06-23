@@ -202,6 +202,56 @@ class ClientesController extends Controller
                     AND ID = :id", ["id" => $id]))->first();
             }
 
+            if ($accion == 1 || $accion == 2) {
+                if ($request->has('referencias_eliminar')) {
+                    $refsEliminar = $request->input('referencias_eliminar');
+                    if (!empty($refsEliminar)) {
+                        $ids = implode(",", array_map('intval', $refsEliminar));
+                        DB::statement("UPDATE PUBLIC.REFERENCIAS SET DELETED_AT = NOW() WHERE ID IN ($ids)");
+                    }
+                }
+
+                if ($request->has('referencias')) {
+                    $referencias = $request->input('referencias');
+                    if (!empty($referencias)) {
+                        foreach ($referencias as $ref) {
+                            DB::insert("INSERT INTO PUBLIC.REFERENCIAS (NOMBRE_COMPLETO, CONTACTO_TELEFONICO, DIRECCION, ID_CLIENTE) VALUES (?, ?, ?, ?)", [
+                                $ref['nombre_completo'],
+                                $ref['contacto_telefonico'],
+                                $ref['direccion'],
+                                $id
+                            ]);
+                        }
+                    }
+                }
+
+                if ($request->has('beneficiarios_eliminar')) {
+                    $bensEliminar = $request->input('beneficiarios_eliminar');
+                    if (!empty($bensEliminar)) {
+                        $ids = implode(",", array_map('intval', $bensEliminar));
+                        DB::statement("UPDATE PUBLIC.BENEFICIARIOS SET DELETED_AT = NOW() WHERE ID IN ($ids)");
+                    }
+                }
+
+                if ($request->has('beneficiarios')) {
+                    $beneficiarios = $request->input('beneficiarios');
+                    if (!empty($beneficiarios)) {
+                        foreach ($beneficiarios as $ben) {
+                            DB::insert("INSERT INTO PUBLIC.BENEFICIARIOS (NOMBRE_COMPLETO, IDENTIDAD, PARENTEZCO, CONTACTO_TELEFONICO, CONTACTO_TELEFONICO_2, CORREO_ELECTRONICO, DIRECCION, ID_CLIENTE) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+                                $ben['nombre_completo'],
+                                $ben['identidad'],
+                                $ben['parentezco'],
+                                $ben['contacto_telefonico'],
+                                $ben['contacto_telefonico_2'] ?? null,
+                                $ben['correo_electronico'] ?? null,
+                                $ben['direccion'],
+                                $id
+                            ]);
+                        }
+                    }
+                }
+            }
+
             DB::commit();
         } catch (Exception $e) {
             DB::rollback();
@@ -213,5 +263,19 @@ class ClientesController extends Controller
             "msgError" => $msgError,
             "clientes_list" => $clientes_list
         ]);
+    }
+
+    public function obtener_referencias(Request $request)
+    {
+        $id_cliente = $request->input('id_cliente');
+        $referencias = DB::select("SELECT ID, NOMBRE_COMPLETO, CONTACTO_TELEFONICO, DIRECCION FROM PUBLIC.REFERENCIAS WHERE ID_CLIENTE = :id_cliente AND DELETED_AT IS NULL", ["id_cliente" => $id_cliente]);
+        return response()->json(["referencias" => $referencias]);
+    }
+
+    public function obtener_beneficiarios(Request $request)
+    {
+        $id_cliente = $request->input('id_cliente');
+        $beneficiarios = DB::select("SELECT ID, NOMBRE_COMPLETO, IDENTIDAD, PARENTEZCO, CONTACTO_TELEFONICO, CONTACTO_TELEFONICO_2, CORREO_ELECTRONICO, DIRECCION FROM PUBLIC.BENEFICIARIOS WHERE ID_CLIENTE = :id_cliente AND DELETED_AT IS NULL", ["id_cliente" => $id_cliente]);
+        return response()->json(["beneficiarios" => $beneficiarios]);
     }
 }

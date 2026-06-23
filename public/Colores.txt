@@ -1,0 +1,3 @@
+azul: #3f5981
+negro: #323232
+blanco: #e6e6e6

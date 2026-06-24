@@ -1,18 +1,14 @@
 services:
   - type: web
     name: terranova
-    env: php
+    env: docker
     region: ohio
     plan: free
-    buildCommand: composer install --no-dev --optimize-autoloader && php artisan key:generate --force && php artisan optimize
-    preDeployCommand: php artisan app:setup
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
-      - key: APP_KEY
-        sync: false
       - key: APP_URL
         value: https://terranova.onrender.com
       - key: DB_CONNECTION

@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y libpq-dev unzip libzip-dev && rm -rf /v
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
+    && sed -ri -e '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf \
     && echo "Listen \${PORT}" > /etc/apache2/ports.conf
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

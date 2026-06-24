@@ -9,6 +9,8 @@ services:
         value: production
       - key: APP_DEBUG
         value: false
+      - key: APP_KEY
+        generateValue: true
       - key: APP_URL
         value: https://terranova.onrender.com
       - key: DB_CONNECTION

@@ -2,7 +2,7 @@ services:
   - type: web
     name: terranova
     env: docker
-    region: ohio
+    region: oregon
     plan: free
     envVars:
       - key: APP_ENV
@@ -13,34 +13,5 @@ services:
         generateValue: true
       - key: APP_URL
         value: https://terranova.onrender.com
-      - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_HOST
-        fromDatabase:
-          name: terranova-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: terranova-db
-          property: port
-      - key: DB_DATABASE
-        fromDatabase:
-          name: terranova-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: terranova-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: terranova-db
-          property: password
       - key: LOG_CHANNEL
         value: stderr
-
-databases:
-  - name: terranova-db
-    databaseName: terranova
-    user: terranova
-    plan: free
-    ipAllowList: []

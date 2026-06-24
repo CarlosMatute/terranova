@@ -1,7 +1,7 @@
 FROM php:8.1-apache
 
-RUN apt-get update && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/* \
-    && docker-php-ext-install pdo_pgsql \
+RUN apt-get update && apt-get install -y libpq-dev unzip && rm -rf /var/lib/apt/lists/* \
+    && docker-php-ext-install pdo_pgsql zip \
     && a2enmod rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -14,6 +14,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY . /var/www/html
 WORKDIR /var/www/html
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --optimize-autoloader
 
 COPY entrypoint.sh /entrypoint.sh

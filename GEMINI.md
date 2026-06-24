@@ -340,3 +340,20 @@ Script PostgreSQL que genera ~150,000 registros:
 - **DataTable server-side** en clientes.blade.php con endpoint `/clientes/datos`
 - **Select2 remoto** en vender.blade.php con endpoint `/clientes/buscar`
 - Eliminada carga masiva de clientes en HTML del formulario vender
+
+### Dashboard
+- Agregada gráfica lineal (Chart.js) de Ingresos vs Cobros últimos 12 meses (`dashboard.blade.php`)
+- Datos mensuales desde `FECHAS_COBROS` agrupados por mes en `DashboardController`
+- Dashboard estilizado con headers gradiente azul institucional y colores Insignia
+
+### Sidebar
+- Reducido `font-size` del texto TERRANOVA en sidebar (`master.blade.php` inline style)
+- Cambiado de `20px` a `18px`
+
+### Residenciales - Subida de imagen con Cropper.js
+- Reemplazado sistema de drag & drop por **Cropper.js** (misma lógica que clientes)
+- Recorte cuadrado (`aspectRatio: 1`), redimensionado a 300x300, comprimido JPEG 0.8
+- Preview de imagen cuadrada al lado izquierdo del campo Nombre
+- En la misma fila: Imagen (col-md-2) + Nombre (col-md-6) + Cantidad Bloques (col-md-4)
+- Al editar: bloques se oculta, nombre expande a col-md-10
+- Modal de recorte reutilizado de clientes

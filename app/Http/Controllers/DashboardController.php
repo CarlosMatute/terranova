@@ -38,10 +38,26 @@ class DashboardController extends Controller
             JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
             WHERE EV.NOMBRE = 'Pendiente' AND V.DELETED_AT IS NULL"))->first();
 
+        // Datos para gráfica lineal (últimos 12 meses)
+        $chart_data = DB::select("
+            SELECT
+                TO_CHAR(FC.FECHA_COBRO, 'YYYY-MM') AS MES,
+                TO_CHAR(FC.FECHA_COBRO, 'Mon') AS MES_LABEL,
+                SUM(FC.CANTIDAD_PAGO) AS TOTAL_COBRAR,
+                COALESCE(SUM(CASE WHEN FC.FECHA_PAGO IS NOT NULL THEN FC.CANTIDAD_PAGO ELSE 0 END), 0) AS TOTAL_PAGADO
+            FROM FECHAS_COBROS FC
+            JOIN VENTAS V ON FC.ID_VENTA = V.ID
+            WHERE FC.FECHA_COBRO >= NOW() - INTERVAL '12 months'
+              AND V.DELETED_AT IS NULL
+            GROUP BY TO_CHAR(FC.FECHA_COBRO, 'YYYY-MM'), TO_CHAR(FC.FECHA_COBRO, 'Mon')
+            ORDER BY MES
+        ");
+
         return view('dashboard')
         ->with('stats', $stats)
         ->with('lotes_disponibles', $lotes_disponibles)
         ->with('clientes_totales', $clientes_totales)
-        ->with('ventas_activas', $ventas_activas);
+        ->with('ventas_activas', $ventas_activas)
+        ->with('chart_data', $chart_data);
     }
 }

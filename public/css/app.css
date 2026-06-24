@@ -19732,7 +19732,7 @@ body {
   visibility: visible;
   transition: opacity 0.5s ease;
   font-weight: 700;
-  font-size: 25px;
+  font-size: 10px;
   color: #000865;
 }
 .sidebar .sidebar-header .sidebar-brand span {

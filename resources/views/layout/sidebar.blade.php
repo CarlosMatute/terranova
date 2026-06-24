@@ -1,8 +1,8 @@
 <nav class="sidebar">
   <div class="sidebar-header">
     <a href="{{ url('/') }}" class="sidebar-brand" style="display: flex; align-items: center;">
-      <img src="{{ url(asset('/assets/images/terranova.png')) }}" alt="Logo"
-                style="height: 18px; width: auto; margin-right: 8px;">
+      {{-- <img src="{{ url(asset('/assets/images/terranova.png')) }}" alt="Logo"
+                style="height: 18px; width: auto; margin-right: 8px;"> --}}
       <span><span style="color: #323232;">TERRA</span><span style="color: #3f5981;">NOVA</span></span>
     </a>
     <div class="sidebar-toggler not-active">

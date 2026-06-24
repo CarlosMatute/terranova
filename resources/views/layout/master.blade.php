@@ -52,7 +52,7 @@ License: For each use you must have a valid license purchased only from above li
     }
     .sidebar .sidebar-header .sidebar-brand {
       color: var(--ins-negro);
-      font-size: 20px;
+      font-size: 18px;
       font-family: 'ND LOGOS REGULAR', sans-serif;
       letter-spacing: 1px;
       -webkit-text-stroke: 0.6px currentColor;

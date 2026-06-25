@@ -18,6 +18,9 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-php artisan optimize
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
 
 apache2-foreground

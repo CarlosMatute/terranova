@@ -1,7 +1,7 @@
 services:
   - type: web
     name: terranova
-    runtime: php
+    env: php
     region: oregon
     plan: free
     buildCommand: composer install --no-dev --optimize-autoloader

@@ -9,8 +9,7 @@ services:
         value: production
       - key: APP_DEBUG
         value: true
-      - key: APP_KEY
-        sync: false
+
       - key: APP_URL
         value: https://terranova.onrender.com
       - key: LOG_CHANNEL

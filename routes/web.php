@@ -48,6 +48,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/guardar', [VentasController::class, 'guardar_venta']);
         Route::get('/detalle/{id}', [VentasController::class, 'ver_detalle_venta']);
         Route::post('/pagar-cuota', [VentasController::class, 'pagar_cuota']);
+        Route::post('/revertir-cuota', [VentasController::class, 'revertir_cuota']);
+        Route::post('/abonar', [VentasController::class, 'abonar']);
     });
 
     Route::get('/vender', [VentasController::class, 'ver_vender']);

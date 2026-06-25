@@ -11,6 +11,22 @@ use Illuminate\Support\Facades\Auth;
 
 class VentasController extends Controller
 {
+    private function toCentavos($valor)
+    {
+        if ($valor === null || $valor === '' || $valor === false) return 0;
+        $parts = explode('.', str_replace(',', '', (string)$valor));
+        $entero = $parts[0] ?? '0';
+        $decimal = isset($parts[1]) ? str_pad(substr($parts[1], 0, 2), 2, '0') : '00';
+        return intval($entero . $decimal);
+    }
+
+    private function fromCentavos($centavos)
+    {
+        $abs = abs(intval($centavos));
+        $signo = $centavos < 0 ? '-' : '';
+        return sprintf('%s%d.%02d', $signo, intdiv($abs, 100), $abs % 100);
+    }
+
     public function ver_ventas()
     {
         $ventas_pendientes = DB::select("SELECT 
@@ -32,7 +48,7 @@ class VentasController extends Controller
             JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
         WHERE 
             V.DELETED_AT IS NULL
-            AND EV.NOMBRE = 'Pendiente'
+            AND EV.NOMBRE = 'Activo'
         ORDER BY 
             V.CREATED_AT DESC");
 
@@ -114,7 +130,7 @@ class VentasController extends Controller
             }
 
             $tipo_pago_id = collect(DB::select("SELECT ID FROM CATALOGO_TIPO_PAGO WHERE NOMBRE = :nombre", ['nombre' => $tipo_pago]))->first()->id;
-            $estado_codigo = ($tipo_pago == 'Contado') ? 'Pagado' : 'Pendiente';
+            $estado_codigo = ($tipo_pago == 'Contado') ? 'Pagado' : 'Activo';
             $estado_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = :nombre", ['nombre' => $estado_codigo]))->first()->id;
 
             $venta = collect(DB::select("INSERT INTO PUBLIC.VENTAS (
@@ -217,6 +233,7 @@ class VentasController extends Controller
         $cobros = DB::select("SELECT *,
             CASE 
                 WHEN FECHA_PAGO IS NOT NULL THEN 'Pagado'
+                WHEN CANTIDAD_PAGO IS NOT NULL THEN 'Cola'
                 WHEN FECHA_COBRO < CURRENT_DATE THEN 'Atrasado'
                 ELSE 'Pendiente'
             END AS ESTADO
@@ -225,6 +242,7 @@ class VentasController extends Controller
         $lotes = DB::select("SELECT 
             L.*,
             B.NOMBRE AS BLOQUE,
+            B.ID AS ID_BLOQUE,
             R.NOMBRE AS RESIDENCIAL,
             R.IMAGEN AS RESIDENCIAL_IMAGEN,
             BR.ID_RESIDENCIAL
@@ -237,10 +255,13 @@ class VentasController extends Controller
         WHERE 
             LV.ID_VENTA = :id", ['id' => $id]);
 
+        $ultima_cuota_pagada = collect(DB::select("SELECT ID FROM FECHAS_COBROS WHERE ID_VENTA = ? AND CANTIDAD_PAGO IS NOT NULL ORDER BY FECHA_COBRO DESC, ID DESC LIMIT 1", [$id]))->first();
+
         return view('terranova.ventas.detalle')
         ->with('venta', $venta)
         ->with('cobros', $cobros)
-        ->with('lotes', $lotes);
+        ->with('lotes', $lotes)
+        ->with('ultima_cuota_pagada_id', $ultima_cuota_pagada ? $ultima_cuota_pagada->id : null);
     }
 
     public function pagar_cuota(Request $request)
@@ -248,29 +269,116 @@ class VentasController extends Controller
         try {
             $id = $request->id;
             $cuota = collect(DB::select("SELECT * FROM FECHAS_COBROS WHERE ID = :id", ['id' => $id]))->first();
-            $venta = collect(DB::select("SELECT CUOTA_MENSUAL FROM VENTAS WHERE ID = :id_venta", ['id' => $cuota->id_venta]))->first();
+            if (!$cuota) throw new Exception("Cuota no encontrada.");
+            $idVenta = $cuota->id_venta;
+            $venta = collect(DB::select("SELECT CUOTA_MENSUAL FROM VENTAS WHERE ID = ?", [$idVenta]))->first();
+
+            $cuotaMensualCentavos = $this->toCentavos($venta->cuota_mensual);
+
+            if ($cuota->cantidad_pago && !$cuota->fecha_pago) {
+                $yaPagadoCentavos = $this->toCentavos($cuota->cantidad_pago);
+                $nuevaCantidadCentavos = $cuotaMensualCentavos;
+            } else {
+                $yaPagadoCentavos = $this->toCentavos($cuota->cantidad_pago ?: 0);
+                $nuevaCantidadCentavos = $cuota->cantidad_pago ? $this->toCentavos($cuota->cantidad_pago) : $cuotaMensualCentavos;
+            }
 
             DB::select("UPDATE FECHAS_COBROS SET 
                 FECHA_PAGO = NOW(),
-                CANTIDAD_PAGO = :monto,
+                CANTIDAD_PAGO = ?,
                 UPDATED_AT = NOW()
-            WHERE ID = :id", [
-                'id' => $id,
-                'monto' => $venta->cuota_mensual
-            ]);
+            WHERE ID = ?", [$this->fromCentavos($nuevaCantidadCentavos), $id]);
 
-            $restantes = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM FECHAS_COBROS WHERE ID_VENTA = :id_venta AND FECHA_PAGO IS NULL", ['id_venta' => $cuota->id_venta]))->first();
+            $restantes = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM FECHAS_COBROS WHERE ID_VENTA = ? AND FECHA_PAGO IS NULL", [$idVenta]))->first();
             
             if ($restantes->total == 0) {
                 $pagado_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Pagado'"))->first()->id;
-                DB::select("UPDATE VENTAS SET ESTADO = :estado, UPDATED_AT = NOW() WHERE ID = :id_venta", [
-                    'estado' => $pagado_id,
-                    'id_venta' => $cuota->id_venta
-                ]);
+                DB::select("UPDATE VENTAS SET ESTADO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$pagado_id, $idVenta]);
             }
 
             return response()->json(['msgSuccess' => 'Cuota pagada correctamente.']);
         } catch (Exception $e) {
+            return response()->json(['msgError' => $e->getMessage()]);
+        }
+    }
+
+    public function revertir_cuota(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $id = $request->id;
+            $cuota = collect(DB::select("SELECT * FROM FECHAS_COBROS WHERE ID = ?", [$id]))->first();
+            if (!$cuota) throw new Exception("Cuota no encontrada.");
+
+            $idVenta = $cuota->id_venta;
+            $venta = collect(DB::select("SELECT CUOTA_MENSUAL, ESTADO FROM VENTAS WHERE ID = ?", [$idVenta]))->first();
+
+            if ($cuota->fecha_pago) {
+                DB::select("UPDATE FECHAS_COBROS SET FECHA_PAGO = NULL, CANTIDAD_PAGO = NULL, UPDATED_AT = NOW() WHERE ID = ?", [$id]);
+            } elseif ($cuota->cantidad_pago) {
+                DB::select("UPDATE FECHAS_COBROS SET CANTIDAD_PAGO = NULL, UPDATED_AT = NOW() WHERE ID = ?", [$id]);
+            } else {
+                throw new Exception("La cuota no tiene un estado válido para revertir.");
+            }
+
+            $pagado_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Pagado'"))->first()->id;
+            if ($venta->estado == $pagado_id) {
+                $activo_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Activo'"))->first()->id;
+                DB::select("UPDATE VENTAS SET ESTADO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$activo_id, $idVenta]);
+            }
+
+            DB::commit();
+            return response()->json(['msgSuccess' => 'Cobro revertido correctamente.']);
+        } catch (Exception $e) {
+            DB::rollback();
+            return response()->json(['msgError' => $e->getMessage()]);
+        }
+    }
+
+    public function abonar(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $idVenta = $request->id_venta;
+            $montoCentavos = $this->toCentavos($request->monto);
+            if ($montoCentavos <= 0) throw new Exception("El monto debe ser mayor a cero.");
+
+            $venta = collect(DB::select("SELECT CUOTA_MENSUAL FROM VENTAS WHERE ID = ?", [$idVenta]))->first();
+            if (!$venta) throw new Exception("Venta no encontrada.");
+
+            $pendientes = DB::select("SELECT ID, CANTIDAD_PAGO FROM FECHAS_COBROS WHERE ID_VENTA = ? AND FECHA_PAGO IS NULL ORDER BY FECHA_COBRO ASC", [$idVenta]);
+            if (empty($pendientes)) throw new Exception("No hay cuotas pendientes.");
+
+            $cuotaMensualCentavos = $this->toCentavos($venta->cuota_mensual);
+            $restanteCentavos = $montoCentavos;
+
+            foreach ($pendientes as $cuota) {
+                if ($restanteCentavos <= 0) break;
+
+                $yaPagadoCentavos = $this->toCentavos($cuota->cantidad_pago);
+                $montoOwedCentavos = $cuotaMensualCentavos - $yaPagadoCentavos;
+
+                if ($restanteCentavos >= $montoOwedCentavos) {
+                    DB::select("UPDATE FECHAS_COBROS SET FECHA_PAGO = NOW(), CANTIDAD_PAGO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$this->fromCentavos($cuotaMensualCentavos), $cuota->id]);
+                    $restanteCentavos -= $montoOwedCentavos;
+                } else {
+                    $nuevoPagadoCentavos = $yaPagadoCentavos + $restanteCentavos;
+                    DB::select("UPDATE FECHAS_COBROS SET CANTIDAD_PAGO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$this->fromCentavos($nuevoPagadoCentavos), $cuota->id]);
+                    $restanteCentavos = 0;
+                    break;
+                }
+            }
+
+            $restantes = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM FECHAS_COBROS WHERE ID_VENTA = ? AND FECHA_PAGO IS NULL", [$idVenta]))->first();
+            if ($restantes->total == 0) {
+                $pagado_id = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Pagado'"))->first()->id;
+                DB::select("UPDATE VENTAS SET ESTADO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$pagado_id, $idVenta]);
+            }
+
+            DB::commit();
+            return response()->json(['msgSuccess' => "Abono de L. " . $this->fromCentavos($montoCentavos) . " aplicado correctamente."]);
+        } catch (Exception $e) {
+            DB::rollback();
             return response()->json(['msgError' => $e->getMessage()]);
         }
     }

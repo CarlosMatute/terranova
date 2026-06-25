@@ -36,7 +36,7 @@ class DashboardController extends Controller
         $clientes_totales = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM CLIENTES WHERE DELETED_AT IS NULL"))->first();
         $ventas_activas = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM VENTAS V
             JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
-            WHERE EV.NOMBRE = 'Pendiente' AND V.DELETED_AT IS NULL"))->first();
+            WHERE EV.NOMBRE = 'Activo' AND V.DELETED_AT IS NULL"))->first();
 
         // Datos para gráfica lineal (últimos 12 meses)
         $chart_data = DB::select("

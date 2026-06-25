@@ -26,4 +26,4 @@ php artisan view:clear
 # Keep DB alive (free Render PostgreSQL sleeps after 15 min)
 while true; do php artisan app:keep-alive 2>/dev/null; sleep 300; done &
 
-apache2-foreground
+exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}

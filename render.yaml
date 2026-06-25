@@ -1,9 +1,11 @@
 services:
   - type: web
     name: terranova
-    env: docker
+    runtime: php
     region: oregon
     plan: free
+    buildCommand: composer install --no-dev --optimize-autoloader
+    startCommand: bash entrypoint.sh
     envVars:
       - key: APP_ENV
         value: production

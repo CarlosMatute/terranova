@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+# Override Render auto-injected DB vars with external hostname (publicly resolvable)
+DB_HOST="dpg-d8u5lf67r5hc73f2rc9g-a.oregon-postgres.render.com"
+DB_PORT="5432"
+DB_DATABASE="terranova_zx0r"
+DB_USERNAME="terranova"
+DB_PASSWORD="eR541ptrIqYdtIstXK2ffu0JRzCyMMRN"
+DB_SSLMODE="require"
+DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
+export DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DB_SSLMODE DATABASE_URL
+
 # Fix APP_KEY: ensure it's a valid base64:... key for AES-256-CBC
 APP_KEY=$(php artisan key:generate --show)
 export APP_KEY
@@ -9,12 +19,6 @@ export APP_KEY
 if [ -n "$RENDER_EXTERNAL_URL" ]; then
     APP_URL="$RENDER_EXTERNAL_URL"
     export APP_URL
-fi
-
-# Force DB_HOST from DATABASE_URL to override Render auto-injected internal hostname
-if [ -n "$DATABASE_URL" ]; then
-    DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|.*@\([^:/]*\).*|\1|p')
-    export DB_HOST
 fi
 
 echo "Waiting for database connection..."
@@ -32,4 +36,4 @@ php artisan view:clear
 # Keep DB alive (free Render PostgreSQL sleeps after 15 min)
 while true; do php artisan app:keep-alive 2>/dev/null; sleep 300; done &
 
-exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+apache2-foreground

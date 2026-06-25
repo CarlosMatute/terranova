@@ -1,19 +1,17 @@
 services:
   - type: web
     name: terranova
-    env: php
+    env: docker
     region: oregon
     plan: free
-    buildCommand: composer install --no-dev --optimize-autoloader
-    startCommand: bash entrypoint.sh
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: true
+      - key: APP_URL
+        value: https://terranova-qlt7.onrender.com
       - key: LOG_CHANNEL
         value: stderr
       - key: APP_KEY
         value: base64:pkUeNYl6Uyv6kcZOX36Dm9llZAI+wnxAIN+bQIUGW+k=
-      - key: DATABASE_URL
-        value: postgresql://terranova:eR541ptrIqYdtIstXK2ffu0JRzCyMMRN@dpg-d8u5lf67r5hc73f2rc9g-a.oregon-postgres.render.com/terranova_zx0r

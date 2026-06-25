@@ -14,3 +14,5 @@ services:
         value: https://terranova.onrender.com
       - key: LOG_CHANNEL
         value: stderr
+      - key: APP_KEY
+        value: base64:pkUeNYl6Uyv6kcZOX36Dm9llZAI+wnxAIN+bQIUGW+k=

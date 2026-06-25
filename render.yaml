@@ -15,3 +15,5 @@ services:
         value: stderr
       - key: APP_KEY
         value: base64:pkUeNYl6Uyv6kcZOX36Dm9llZAI+wnxAIN+bQIUGW+k=
+      - key: DATABASE_URL
+        value: postgresql://terranova:eR541ptrIqYdtIstXK2ffu0JRzCyMMRN@dpg-d8u5lf67r5hc73f2rc9g-a.oregon-postgres.render.com/terranova_zx0r

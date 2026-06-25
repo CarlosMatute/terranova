@@ -14,6 +14,7 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN cp .env.example .env \
     && php artisan key:generate \
+    && mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions \
     && chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 

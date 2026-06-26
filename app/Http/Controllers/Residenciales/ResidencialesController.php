@@ -17,15 +17,17 @@ class ResidencialesController extends Controller
     {
 
         $residenciales = DB::select("SELECT
-            ID,
-            NOMBRE,
-            DESCRIPCION,
-            IMAGEN
+            R.ID,
+            R.NOMBRE,
+            R.DESCRIPCION,
+            R.IMAGEN,
+            COALESCE((SELECT COUNT(*) FROM BLOQUES_RESIDENCIALES WHERE ID_RESIDENCIAL = R.ID AND DELETED_AT IS NULL), 0) AS TOTAL_BLOQUES,
+            COALESCE((SELECT COUNT(*) FROM BLOQUES_RESIDENCIALES BR2 JOIN LOTES L ON BR2.ID = L.ID_BLOQUE_RESIDENCIAL AND L.DELETED_AT IS NULL WHERE BR2.ID_RESIDENCIAL = R.ID AND BR2.DELETED_AT IS NULL), 0) AS TOTAL_LOTES
         FROM
-            RESIDENCIALES
+            RESIDENCIALES R
         WHERE
-            DELETED_AT IS NULL
-            AND ID_USER = :id_user", ["id_user" => Auth::id()]);
+            R.DELETED_AT IS NULL
+            AND R.ID_USER = :id_user", ["id_user" => Auth::id()]);
 
         return view('terranova.residenciales.residenciales')
         ->with('residenciales', $residenciales);
@@ -134,15 +136,17 @@ class ResidencialesController extends Controller
             }
 
             $residenciales_list = collect(\DB::select("SELECT
-                ID,
-                NOMBRE,
-                DESCRIPCION,
-                IMAGEN
+                R.ID,
+                R.NOMBRE,
+                R.DESCRIPCION,
+                R.IMAGEN,
+                COALESCE((SELECT COUNT(*) FROM BLOQUES_RESIDENCIALES WHERE ID_RESIDENCIAL = R.ID AND DELETED_AT IS NULL), 0) AS TOTAL_BLOQUES,
+                COALESCE((SELECT COUNT(*) FROM BLOQUES_RESIDENCIALES BR2 JOIN LOTES L ON BR2.ID = L.ID_BLOQUE_RESIDENCIAL AND L.DELETED_AT IS NULL WHERE BR2.ID_RESIDENCIAL = R.ID AND BR2.DELETED_AT IS NULL), 0) AS TOTAL_LOTES
             FROM
-                RESIDENCIALES
+                RESIDENCIALES R
             WHERE
-                DELETED_AT IS NULL
-                AND ID = :id", ["id" => $id]))->first();
+                R.DELETED_AT IS NULL
+                AND R.ID = :id", ["id" => $id]))->first();
 
             DB::commit();
         } catch (Exception $e) {
@@ -154,6 +158,72 @@ class ResidencialesController extends Controller
             "msgSuccess" => $msgSuccess,
             "msgError" => $msgError,
             "residenciales_list" => $residenciales_list
+        ]);
+    }
+
+    public function estado_eliminacion($id_residencial)
+    {
+        $bloques = DB::select("SELECT
+            B.NOMBRE AS BLOQUE,
+            COUNT(L.ID) AS TOTAL_LOTES,
+            COUNT(LV.ID_VENTA) AS VENDIDOS,
+            COUNT(L.ID_CLIENTE_RESERVAR) AS APARTADOS
+        FROM
+            BLOQUES_RESIDENCIALES BR
+            JOIN BLOQUES B ON B.ID = BR.ID_BLOQUE
+            LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL AND L.DELETED_AT IS NULL
+            LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
+        WHERE
+            BR.ID_RESIDENCIAL = :id
+            AND BR.DELETED_AT IS NULL
+        GROUP BY
+            B.NOMBRE
+        ORDER BY
+            B.NOMBRE", ["id" => $id_residencial]);
+
+        $total_vendidos = array_sum(array_column($bloques, 'vendidos'));
+        $total_apartados = array_sum(array_column($bloques, 'apartados'));
+        $puede_eliminar = ($total_vendidos == 0 && $total_apartados == 0);
+
+        return response()->json([
+            "puede_eliminar" => $puede_eliminar,
+            "total_vendidos" => $total_vendidos,
+            "total_apartados" => $total_apartados,
+            "bloques" => $bloques
+        ]);
+    }
+
+    public function estado_eliminacion_bloque($id_bloque)
+    {
+        $lotes = DB::select("SELECT
+            L.ID,
+            'L-' || L.LOTE AS NOMBRE,
+            CASE
+                WHEN LV.ID_VENTA IS NOT NULL THEN 'Vendido'
+                WHEN L.ID_CLIENTE_RESERVAR IS NOT NULL THEN 'Apartado'
+                ELSE 'Disponible'
+            END AS ESTADO
+        FROM
+            LOTES L
+            LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
+        WHERE
+            L.ID_BLOQUE_RESIDENCIAL = :id
+            AND L.DELETED_AT IS NULL
+        ORDER BY
+            L.LOTE", ["id" => $id_bloque]);
+
+        $vendidos = 0;
+        $apartados = 0;
+        foreach ($lotes as $l) {
+            if ($l->estado == 'Vendido') $vendidos++;
+            if ($l->estado == 'Apartado') $apartados++;
+        }
+
+        return response()->json([
+            "puede_eliminar" => ($vendidos == 0 && $apartados == 0),
+            "vendidos" => $vendidos,
+            "apartados" => $apartados,
+            "lotes" => $lotes
         ]);
     }
 
@@ -174,7 +244,10 @@ class ResidencialesController extends Controller
         $bloques = DB::select("SELECT
             BR.ID,
             B.NOMBRE AS BLOQUE,
-            COUNT(L.ID) AS LOTES,
+            COUNT(L.ID) AS TOTAL_LOTES,
+            COUNT(LV.ID_VENTA) AS VENDIDOS,
+            COUNT(L.ID_CLIENTE_RESERVAR) AS APARTADOS,
+            COUNT(L.ID) - COUNT(LV.ID_VENTA) - COUNT(L.ID_CLIENTE_RESERVAR) AS DISPONIBLES,
             (
                 ROW_NUMBER() OVER (
                     ORDER BY
@@ -184,8 +257,8 @@ class ResidencialesController extends Controller
         FROM
             BLOQUES B
             JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
-            LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
-            AND L.DELETED_AT IS NULL
+            LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL AND L.DELETED_AT IS NULL
+            LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
         WHERE
             BR.ID_RESIDENCIAL = :id
             AND BR.DELETED_AT IS NULL
@@ -328,7 +401,7 @@ class ResidencialesController extends Controller
                     LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
                     AND L.DELETED_AT IS NULL
                 WHERE
-                    BR.ID_RESIDENCIAL = 1
+                    BR.ID_RESIDENCIAL = :id_residencial
                     AND BR.DELETED_AT IS NULL
                     AND B.NOMBRE < (
                         SELECT
@@ -343,7 +416,8 @@ class ResidencialesController extends Controller
                     B.NOMBRE DESC
                 LIMIT
                     1;", [
-                    "id" => $id
+                    "id" => $id,
+                    "id_residencial" => $id_residencial
                 ]))->first();
 
                 $msgSuccess = "Bloque eliminado exitosamente.";
@@ -353,16 +427,19 @@ class ResidencialesController extends Controller
 
             $bloques_list = collect(\DB::select("SELECT
                 BR.ID,
-                B.NOMBRE BLOQUE,
-                COUNT(L.ID) LOTES
+                B.NOMBRE AS BLOQUE,
+                COUNT(L.ID) AS TOTAL_LOTES,
+                COUNT(LV.ID_VENTA) AS VENDIDOS,
+                COUNT(L.ID_CLIENTE_RESERVAR) AS APARTADOS,
+                COUNT(L.ID) - COUNT(LV.ID_VENTA) - COUNT(L.ID_CLIENTE_RESERVAR) AS DISPONIBLES
             FROM
                 BLOQUES B
                 JOIN BLOQUES_RESIDENCIALES BR ON B.ID = BR.ID_BLOQUE
-                LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL
+                LEFT JOIN LOTES L ON BR.ID = L.ID_BLOQUE_RESIDENCIAL AND L.DELETED_AT IS NULL
+                LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
             WHERE
                 BR.id = :id
                 AND BR.DELETED_AT IS NULL
-                AND L.DELETED_AT IS NULL
             GROUP BY
                 BR.ID,
                 B.NOMBRE
@@ -464,6 +541,7 @@ class ResidencialesController extends Controller
                 COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
                 COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
             ) NOMBRE_COMPLETO,
+            C.IMAGEN AS CLIENTE_IMAGEN,
             L.RESERVADO_HASTA,
             TO_CHAR(L.RESERVADO_HASTA, 'DD/MM/YYYY') AS RESERVADO_HASTA_FORMATEADO
         FROM
@@ -632,6 +710,20 @@ class ResidencialesController extends Controller
                 ]);
                 $msgSuccess = "Lote actualizado exitosamente.";
             }elseif($accion == 3){
+                $lote_estado = collect(DB::select("SELECT
+                    CASE
+                        WHEN LV.ID_VENTA IS NOT NULL THEN 'Vendido'
+                        WHEN L.ID_CLIENTE_RESERVAR IS NOT NULL THEN 'Reservado'
+                        ELSE 'Disponible'
+                    END AS ESTADO
+                FROM LOTES L
+                LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
+                WHERE L.ID = :id", ["id" => $id]))->first();
+
+                if ($lote_estado && $lote_estado->estado != 'Disponible') {
+                    throw new Exception("No se puede eliminar un lote que está " . strtolower($lote_estado->estado) . ".");
+                }
+
                 DB::select("UPDATE
                     PUBLIC.LOTES
                 SET
@@ -689,7 +781,7 @@ class ResidencialesController extends Controller
                         L.ID, L.NOMBRE, L.AREA, L.AREA || ' m²' AS AREA_FORMATEADO,
                         L.NORTE, L.SUR, L.ESTE, L.OESTE, L.PRECIO,
                         TO_CHAR(L.PRECIO, 'L999,999,999.99') AS PRECIO_FORMATEADO,
-                        L.ANIOS_FINANCIAMIENTO, L.ID_CLIENTE_RESERVAR, LV.ID_VENTA,
+                        L.ANIOS_FINANCIAMIENTO, L.ID_CLIENTE_RESERVAR, LV.ID_VENTA, C.IMAGEN AS CLIENTE_IMAGEN,
                         'Norte: ' || L.NORTE || ' m, Sur: ' || L.SUR || ' m, Este: ' || L.ESTE || ' m, Oeste: ' || L.OESTE || ' m.' AS COLINDANCIAS,
                         CASE WHEN L.ANIOS_FINANCIAMIENTO = 1 THEN L.ANIOS_FINANCIAMIENTO || ' año'
                              ELSE L.ANIOS_FINANCIAMIENTO || ' años' END AS ANIOS_FINANCIAMIENTO_FORMATEADO,

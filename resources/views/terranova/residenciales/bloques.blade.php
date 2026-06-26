@@ -56,7 +56,7 @@
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
                                     <th scope="col" class="text-white">Bloque</th>
-                                    <th scope="col" class="text-white">Lotes</th>
+                                    <th scope="col" class="text-white">LOTES</th>
                                     <th scope="col" class="text-white">Opciones</th>
                                 </tr>
                             </thead>
@@ -65,11 +65,30 @@
                                     <tr style="font-size: small">
                                         <td>{{ $row->id }}</td>
                                         <td><h4><span class="badge bg-primary">{{ $row->bloque }}</span></h4></td>
-                                        <td>{{ $row->lotes }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <div class="text-center px-2 py-1" style="background: var(--ins-azul-oscuro); border-radius: 6px; min-width: 55px;">
+                                                    <div class="text-white fw-bold" style="font-size: 1rem;">{{ $row->total_lotes }}</div>
+                                                    <div class="text-white-50" style="font-size: 0.55rem; line-height: 1;">Total</div>
+                                                </div>
+                                                <div class="text-center px-2 py-1" style="background: var(--ins-azul); border-radius: 6px; min-width: 55px;">
+                                                    <div class="text-white fw-bold" style="font-size: 1rem;">{{ $row->vendidos }}</div>
+                                                    <div class="text-white-50" style="font-size: 0.55rem; line-height: 1;">Vend.</div>
+                                                </div>
+                                                <div class="text-center px-2 py-1 text-white" style="background: #d4a017; border-radius: 6px; min-width: 55px;">
+                                                    <div class="fw-bold" style="font-size: 1rem;">{{ $row->apartados }}</div>
+                                                    <div class="text-white-50" style="font-size: 0.55rem; line-height: 1;">Apart.</div>
+                                                </div>
+                                                <div class="text-center px-2 py-1 text-white" style="background: #2e7d32; border-radius: 6px; min-width: 55px;">
+                                                    <div class="fw-bold" style="font-size: 1rem;">{{ $row->disponibles }}</div>
+                                                    <div style="font-size: 0.55rem; line-height: 1; opacity: 0.7;">Disp.</div>
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td>
                                             <div class="d-flex gap-1">
                                                 @if ($row->ultimo)
-                                                    <button type="button" class="btn btn-danger btn-xs btn_eliminar_bloque" data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}">
+                                                    <button type="button" class="btn btn-danger btn-xs btn_eliminar_bloque" data-bs-toggle="modal" data-bs-target=".modal_eliminar_bloque" data-id="{{ $row->id }}" data-bloque="{{ $row->bloque }}">
                                                         <i data-feather="trash-2" width="14" height="14"></i> Eliminar
                                                     </button>
                                                 @endif
@@ -207,37 +226,44 @@
                             data-feather="x"></i> Eliminar Registro</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" id="modal_eliminar_bloque_body">
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Siguiente Bloque</label>
-                            <button type="button" class="btn btn-azul form-control">{{ $bloque_siguiente->nombre }}</button>
+                        <div class="col-12 grid-margin">
+                            <div class="row">
+                                <center id="modal_eliminar_bloque_confirmacion">
+                                    <i class="btn-icon-prepend text-warning" data-feather="alert-circle"
+                                        style="width: 90px; height: 90px;"></i>
+                                    <br><br>
+                                    <div class="col-sm-12">
+                                        <div class="mb-3">
+                                            <h4><label class="form-label"><strong>¿Realmente deseas eliminar este
+                                                        registro?</strong></label></h4>
+                                            <br>
+                                            <h5><label class="form-label"
+                                                    id="modal_eliminar_bloque_informacion"></label></h5>
+                                            <br>
+                                            <p class="fw-normal">Este proceso no se puede revertir</p>
+                                        </div>
+                                    </div>
+                                </center>
+                                <div id="modal_eliminar_bloque_lotes" style="display:none; width:100%; text-align:left;">
+                                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                        <i data-feather="alert-triangle" class="me-2" width="24" height="24"></i>
+                                        <div>
+                                            <strong>No se puede eliminar este bloque</strong><br>
+                                            Tiene lotes vendidos o apartados.
+                                        </div>
+                                    </div>
+                                    <h6 class="mb-3">Lotes con actividad:</h6>
+                                    <div id="modal_eliminar_bloque_lista"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Cantidad Lotes</label>
-                            <input id="modal_bloque_cantidad" class="form-control" type="number" value="1" />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Precio x Lote</label>
-                            <input id="modal_bloque_precio" class="form-control" type="number" />
-                        </div>
-                    </div>
-                    <hr>
-                    <h6>Colindancias y Area</h6>
-                    <div class="row mt-2">
-                        <div class="col-md-3 mb-3"><label>Norte</label><input id="modal_bloque_norte" class="form-control" type="number" /></div>
-                        <div class="col-md-3 mb-3"><label>Sur</label><input id="modal_bloque_sur" class="form-control" type="number" /></div>
-                        <div class="col-md-3 mb-3"><label>Este</label><input id="modal_bloque_este" class="form-control" type="number" /></div>
-                        <div class="col-md-3 mb-3"><label>Oeste</label><input id="modal_bloque_oeste" class="form-control" type="number" /></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3"><label>Area (m²)</label><input id="modal_bloque_area" class="form-control" type="number" /></div>
-                        <div class="col-md-6 mb-3"><label>Financiamiento (años)</label><input id="modal_bloque_finan" class="form-control" type="number" /></div>
                     </div>
                 </div>
                 <div class="modal-footer bg-azul-oscuro">
                     <button type="button" class="btn btn-negro btn-xs" data-bs-dismiss="modal"><i data-feather="x" width="16" height="16"></i> Cerrar</button>
-                    <button type="button" class="btn btn-danger btn-xs" id="btn_confirmar_guardar"><i data-feather="save" width="16" height="16"></i> Guardar</button>
+                    <button type="button" class="btn btn-danger btn-xs" id="btn_eliminar_bloque"><i data-feather="trash-2" width="16" height="16"></i> Eliminar</button>
                 </div>
             </div>
         </div>
@@ -252,9 +278,23 @@
 
 @push('custom-scripts')
     <script>
+        var table = null;
+        var btn_activo = true;
+        var url_guardar_bloque = "{{ url('/residenciales/bloques/guardar') }}";
+        var id_residencial = {{ $residencial->id }};
+        var id_bloque_siguiente = {{ $bloque_siguiente ? $bloque_siguiente->id : 0 }};
+        var cantidad_lotes = 0, precio_lote = 0, norte = 0, sur = 0, este = 0, oeste = 0, area = 0, financiamiento = 0;
+        var bloque_siguiente = "{{ $bloque_siguiente ? $bloque_siguiente->nombre : '' }}";
+        var rowNumber = null, id = null, bloque = null, accion = 1;
         $(document).ready(function() {
-            $('#tbl_bloques').DataTable({
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            table = $('#tbl_bloques').DataTable({
                 responsive: true,
+                order: [[1, 'asc']],
                 language: {
                     processing: "Procesando...",
                     search: "Buscar:",
@@ -288,6 +328,19 @@
                 var length_sel = datatable.closest('.dataTables_wrapper').find('div[id$=_length] select');
                 length_sel.removeClass('form-control-sm');
             });
+
+            function calcularArea() {
+                var n = parseFloat($("#modal_agregar_bloque_norte").val()) || 0;
+                var s = parseFloat($("#modal_agregar_bloque_sur").val()) || 0;
+                var e = parseFloat($("#modal_agregar_bloque_este").val()) || 0;
+                var w = parseFloat($("#modal_agregar_bloque_oeste").val()) || 0;
+                if (n > 0 && s > 0 && e > 0 && w > 0) {
+                    var calc = ((n + s) / 2) * ((e + w) / 2);
+                    $("#modal_agregar_bloque_area").val(Math.round(calc * 100) / 100);
+                }
+            }
+
+            $("#modal_agregar_bloque_norte, #modal_agregar_bloque_sur, #modal_agregar_bloque_este, #modal_agregar_bloque_oeste").on("input", calcularArea);
 
             $("#tbl_bloques tbody").on("click", "tr", function() {
                 let row = table.row(this);
@@ -325,6 +378,31 @@
             bloque = triggerLink.data("bloque");
             $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-primary">' + bloque +
                 '</span></h4>');
+            var urlEstado = "{{ url('/residenciales/bloques') }}/" + id + "/estado-eliminacion";
+            $.get(urlEstado, function(data) {
+                if (data.puede_eliminar) {
+                    $("#modal_eliminar_bloque_confirmacion").show();
+                    $("#modal_eliminar_bloque_lotes").hide();
+                    $("#btn_eliminar_bloque").prop("disabled", false);
+                } else {
+                    $("#modal_eliminar_bloque_confirmacion").hide();
+                    $("#modal_eliminar_bloque_lotes").show();
+                    $("#btn_eliminar_bloque").prop("disabled", true);
+                    var html = '<div class="table-responsive"><table class="table table-sm table-bordered">' +
+                        '<thead class="bg-azul-oscuro text-white"><tr><th>Lote</th><th>Estado</th></tr></thead><tbody>';
+                    $.each(data.lotes, function(i, l) {
+                        if (l.estado == 'Vendido' || l.estado == 'Apartado') {
+                            var badge = (l.estado == 'Vendido')
+                                ? '<span class="badge bg-azul">Vendido</span>'
+                                : '<span class="badge bg-azul-claro">Apartado</span>';
+                            html += '<tr><td>' + l.nombre + '</td><td>' + badge + '</td></tr>';
+                        }
+                    });
+                    html += '</tbody></table></div>';
+                    $("#modal_eliminar_bloque_lista").html(html);
+                    feather.replace();
+                }
+            });
         });
 
         $(".modal-footer").on("click", "#btn_eliminar_bloque", function() {
@@ -443,15 +521,17 @@
                         btn_activo = true;
                         timeout = data.timeout;
                     } else {
-                        titleMsg = "Datos Guardados";
+                        titleMsg = (accion == 3) ? "Registro Eliminado" : "Datos Guardados";
                         textMsg = data.msgSuccess;
                         typeMsg = "success";
                         timer = 2000;
 
                         var bloque_siguiente_list = data.bloque_siguiente;
-                        bloque_siguiente = bloque_siguiente_list.nombre;
-                        $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
-                        id_bloque_siguiente = bloque_siguiente_list.id;
+                        if (bloque_siguiente_list) {
+                            bloque_siguiente = bloque_siguiente_list.nombre;
+                            $("#modal_agregar_bloque_siguiente").html(bloque_siguiente);
+                            id_bloque_siguiente = bloque_siguiente_list.id;
+                        }
                         var agregarBotonDT = null;
                         var row = data.bloques_list;
                         var baseUrl = "{{ url('/') }}";
@@ -459,7 +539,24 @@
                             var nuevaFilaDT = [
                                 row.id,
                                 '<h4><span class="badge bg-primary">' + row.bloque + '</span></h4>',
-                                row.lotes,
+                                '<div class="d-flex align-items-center gap-1">' +
+                                    '<div class="text-center px-2 py-1" style="background: var(--ins-azul-oscuro); border-radius: 6px; min-width: 55px;">' +
+                                        '<div class="text-white fw-bold" style="font-size: 1rem;">' + (row.total_lotes || 0) + '</div>' +
+                                        '<div class="text-white-50" style="font-size: 0.55rem; line-height: 1;">Total</div>' +
+                                    '</div>' +
+                                    '<div class="text-center px-2 py-1" style="background: var(--ins-azul); border-radius: 6px; min-width: 55px;">' +
+                                        '<div class="text-white fw-bold" style="font-size: 1rem;">' + (row.vendidos || 0) + '</div>' +
+                                        '<div class="text-white-50" style="font-size: 0.55rem; line-height: 1;">Vend.</div>' +
+                                    '</div>' +
+                                    '<div class="text-center px-2 py-1 text-white" style="background: #d4a017; border-radius: 6px; min-width: 55px;">' +
+                                        '<div class="fw-bold" style="font-size: 1rem;">' + (row.apartados || 0) + '</div>' +
+                                        '<div class="text-white-50" style="font-size: 0.55rem; line-height: 1;">Apart.</div>' +
+                                    '</div>' +
+                                    '<div class="text-center px-2 py-1 text-white" style="background: #2e7d32; border-radius: 6px; min-width: 55px;">' +
+                                        '<div class="fw-bold" style="font-size: 1rem;">' + (row.disponibles || 0) + '</div>' +
+                                        '<div style="font-size: 0.55rem; line-height: 1; opacity: 0.7;">Disp.</div>' +
+                                    '</div>' +
+                                '</div>',
 
                                 '<div class="d-flex gap-1">' +
 

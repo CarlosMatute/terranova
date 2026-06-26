@@ -52,9 +52,9 @@
                             <thead class="bg-azul-oscuro">
                                 <tr class="headings">
                                     <th scope="col" class="text-white">Id</th>
-                                    <th scope="col" class="text-white">Imagen</th>
-                                    <th scope="col" class="text-white">Nombre</th>
+                                    <th scope="col" class="text-white">Residencial</th>
                                     <th scope="col" class="text-white">Descripcion</th>
+                                    <th scope="col" class="text-white">Bloques / Lotes</th>
                                     <th scope="col" class="text-white">Opciones</th>
                                 </tr>
                             </thead>
@@ -63,15 +63,27 @@
                                     <tr style="font-size: small">
                                         <td scope="row">{{ $row->id }}</td>
                                         <td scope="row">
-                                            <div class="me-3">
-                                                <img class="wd-30 ht-30 rounded-circle"
+                                            <div class="d-flex align-items-center gap-2">
+                                                <img class="wd-30 ht-30"
                                                     src="{{ asset('storage/residenciales/res_' . $row->id . '/' . $row->imagen) }}"
-                                                    alt="user"
+                                                    alt="user" style="object-fit: cover; border-radius: 0;"
                                                     onerror="this.onerror=null; this.src='{{ url(asset('/assets/images/homes.png')) }}';">
+                                                {{ $row->nombre }}
                                             </div>
                                         </td>
-                                        <td scope="row">{{ $row->nombre }}</td>
                                         <td scope="row">{{ $row->descripcion }}</td>
+                                        <td scope="row">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="text-center px-2 py-1" style="background: var(--ins-azul-oscuro); border-radius: 6px; min-width: 65px;">
+                                                    <div class="text-white fw-bold" style="font-size: 1.1rem;">{{ $row->total_bloques }}</div>
+                                                    <div class="text-white-50" style="font-size: 0.6rem; line-height: 1;">Bloques</div>
+                                                </div>
+                                                <div class="text-center px-2 py-1 bg-azul" style="border-radius: 6px; min-width: 65px;">
+                                                    <div class="text-white fw-bold" style="font-size: 1.1rem;">{{ $row->total_lotes }}</div>
+                                                    <div class="text-white-50" style="font-size: 0.6rem; line-height: 1;">Lotes</div>
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td scope="row">
                                             <button type="button" class="btn btn-azul-claro btn-xs btn_editar_residencial"
                                                 data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial"
@@ -192,11 +204,11 @@
                             data-feather="x"></i> Eliminar Registro</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="btn-close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" id="modal_eliminar_residencial_body">
                     <div class="row">
                         <div class="col-12 grid-margin">
                             <div class="row">
-                                <center>
+                                <center id="modal_eliminar_residencial_confirmacion">
                                     <i class="btn-icon-prepend text-warning" data-feather="alert-circle"
                                         style="width: 90px; height: 90px;"></i>
                                     <br><br>
@@ -212,8 +224,18 @@
                                         </div>
                                     </div>
                                 </center>
+                                <div id="modal_eliminar_residencial_bloques" style="display:none; width:100%; text-align:left;">
+                                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                        <i data-feather="alert-triangle" class="me-2" width="24" height="24"></i>
+                                        <div>
+                                            <strong>No se puede eliminar esta residencial</strong><br>
+                                            Tiene lotes vendidos o apartados.
+                                        </div>
+                                    </div>
+                                    <h6 class="mb-3">Bloques con actividad:</h6>
+                                    <div id="modal_eliminar_residencial_lista"></div>
+                                </div>
                             </div>
-                            <!-- Row -->
                         </div>
                     </div>
                 </div>
@@ -263,6 +285,7 @@
                 ],
                 "iDisplayLength": 10,
                 responsive: true,
+                order: [[1, 'asc']],
                 language: {
                     processing: "Procesando...",
                     search: "Buscar:",
@@ -392,6 +415,28 @@
             nombre = triggerLink.data("nombre");
             descripcion = triggerLink.data("descripcion");
             $("#modal_eliminar_residencial_informacion").html(nombre);
+            var urlEstado = "{{ url('/residenciales') }}/" + id + "/estado-eliminacion";
+            $.get(urlEstado, function(data) {
+                if (data.puede_eliminar) {
+                    $("#modal_eliminar_residencial_confirmacion").show();
+                    $("#modal_eliminar_residencial_bloques").hide();
+                    $("#btn_eliminar_residencial").prop("disabled", false);
+                } else {
+                    $("#modal_eliminar_residencial_confirmacion").hide();
+                    $("#modal_eliminar_residencial_bloques").show();
+                    $("#btn_eliminar_residencial").prop("disabled", true);
+                    var html = '<div class="table-responsive"><table class="table table-sm table-bordered">' +
+                        '<thead class="bg-azul-oscuro text-white"><tr><th>Bloque</th><th>Total</th><th>Vendidos</th><th>Apartados</th></tr></thead><tbody>';
+                    $.each(data.bloques, function(i, b) {
+                        if (b.vendidos > 0 || b.apartados > 0) {
+                            html += '<tr><td>' + b.bloque + '</td><td>' + b.total_lotes + '</td><td><span class="badge bg-success">' + b.vendidos + '</span></td><td><span class="badge bg-warning">' + b.apartados + '</span></td></tr>';
+                        }
+                    });
+                    html += '</tbody></table></div>';
+                    $("#modal_eliminar_residencial_lista").html(html);
+                    feather.replace();
+                }
+            });
         });
 
         $(".modal-footer").on("click", "#btn_eliminar_residencial", function() {
@@ -467,15 +512,25 @@
                             var basePath = "{{ url('/') }}/storage/residenciales/res_" + row.id + "/";
                             var nuevaFilaDT = [
                                 row.id,
-                                '<div class="me-3">' +
-                                    '<img class="wd-30 ht-30 rounded-circle" ' +
+                                '<div class="d-flex align-items-center gap-2">' +
+                                    '<img class="wd-30 ht-30" ' +
                                     'src="' + basePath + row.imagen + '" ' +
-                                    'alt="img" ' +
+                                    'alt="img" style="object-fit: cover; border-radius: 0;" ' +
                                     'onerror="this.onerror=null; this.src=\'' +
-                                    "{{ url('/') }}/assets/images/homes.png" + '\';">' +
+                                    "{{ url('/') }}/assets/images/homes.png" + '\';"> ' +
+                                    row.nombre +
                                 '</div>',
-                                row.nombre,
                                 '<div class="text-truncate" style="max-width:250px;">' + row.descripcion + '</div>',
+                                '<div class="d-flex align-items-center gap-2">' +
+                                    '<div class="text-center px-2 py-1" style="background: var(--ins-azul-oscuro); border-radius: 6px; min-width: 65px;">' +
+                                        '<div class="text-white fw-bold" style="font-size: 1.1rem;">' + (row.total_bloques || 0) + '</div>' +
+                                        '<div class="text-white-50" style="font-size: 0.6rem; line-height: 1;">Bloques</div>' +
+                                    '</div>' +
+                                    '<div class="text-center px-2 py-1 bg-azul" style="border-radius: 6px; min-width: 65px;">' +
+                                        '<div class="text-white fw-bold" style="font-size: 1.1rem;">' + (row.total_lotes || 0) + '</div>' +
+                                        '<div class="text-white-50" style="font-size: 0.6rem; line-height: 1;">Lotes</div>' +
+                                    '</div>' +
+                                '</div>',
                                 '<div class="d-flex gap-1">' +
                                     '<button type="button" class="btn btn-azul-claro btn-xs btn_editar_residencial" ' +
                                     'data-bs-toggle="modal" data-bs-target=".modal_agregar_residencial" ' +
@@ -493,8 +548,8 @@
                                         '<i data-feather="trash-2" width="14" height="14"></i> Eliminar' +
                                     '</button> ' +
                                     '<a href="residenciales/' + row.id + '/bloques" ' +
-                                    'class="btn btn-azul btn-xs">' +
-                                        '<i data-feather="log-in" width="14" height="14"></i> Entrar' +
+                                    'class="btn btn-azul btn-xs" role="button" aria-pressed="true">' +
+                                        '<i data-feather="square" width="14" height="14"></i> Bloques' +
                                     '</a>' +
                                 '</div>'
                             ];
@@ -508,6 +563,7 @@
                             table.row(rowNumber).remove().draw();
                             $("#modal_eliminar_residencial").modal("hide");
                         }
+                        feather.replace();
                         $("#modal_agregar_residencial").modal("hide");
                         btn_activo = true;
                     }

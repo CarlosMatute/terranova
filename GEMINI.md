@@ -357,3 +357,129 @@ Script PostgreSQL que genera ~150,000 registros:
 - En la misma fila: Imagen (col-md-2) + Nombre (col-md-6) + Cantidad Bloques (col-md-4)
 - Al editar: bloques se oculta, nombre expande a col-md-10
 - Modal de recorte reutilizado de clientes
+
+---
+
+## Auditoría de Calidad — Recomendaciones
+
+### 🔴 CRÍTICOS (Seguridad / Integridad de datos)
+
+| # | Riesgo | Archivo | Descripción |
+|---|--------|---------|-------------|
+| 1 | **Alto** | `ResidencialesController.php:331` | `ID_RESIDENCIAL = 1` hardcodeado en delete de bloque. Rompe la UI para cualquier residencial con ID distinto de 1. |
+| 2 | **Alto** | `ResidencialesController.php:298-300` | Update de bloque (`accion == 2`) no ejecuta ningún UPDATE, solo devuelve éxito sin persistir datos. |
+| 3 | **Alto** | Todos los controllers | Cero validación server-side (`$request->validate()`). Toda la validación es JS del lado cliente. |
+| 4 | **Alto** | `ResidencialesController`, `ClientesController` | Updates/deletes no verifican `ID_USER`. Cualquier usuario autenticado puede modificar/eliminar datos de otros. |
+| 5 | **Alto** | `DashboardController.php:14-54` | Dashboard no filtra por `ID_USER` — muestra datos de todos los usuarios. |
+| 6 | **Alto** | `ClientesController.php:287-338` | SQL dinámico concatenado (`$where`) sin prepared statements completos. |
+| 7 | **Medio** | Todos los controllers | `$e->getMessage()` expuesto al frontend — filtra detalles internos (tablas, constraints, etc.). |
+| 8 | **Medio** | `ResidencialesController.php:115` | `Storage::delete()` con nombre de imagen del usuario sin sanitizar (path traversal). |
+| 9 | **Medio** | `guardar_lote():645-658` | No hay verificación de overlap en reservas — dos usuarios pueden reservar el mismo lote. |
+| 10 | **Medio** | `guardar_bloque():285-295` | Inserción masiva con `GENERATE_SERIES` sin límite superior. |
+| 11 | **Bajo** | `.env` | Contraseña de DB en texto plano en repositorio. |
+
+### 🟠 ALTOS (Arquitectura / Mantenibilidad)
+
+| # | Problema | Archivo | Descripción |
+|---|----------|---------|-------------|
+| 12 | Migraciones ausentes | `database/migrations/` | No hay migraciones para las 10+ tablas del negocio. Schema en SQL suelto. |
+| 13 | Sin modelos Eloquent | `app/Models/` | Todo el código usa `DB::select()`, `DB::insert()` con SQL crudo. Sin relaciones, eventos, accessors, SoftDeletes. |
+| 14 | Patrón "accion" (1-5) | Todos los controllers | CRUD en un solo método con switch numérico. Viola SRP. |
+| 15 | Sin paginación server-side | `residenciales`, `bloques`, `lotes`, `ventas` | DataTables carga todo en cliente. Con miles de registros se vuelve lento. |
+| 16 | JS duplicado ~80% | `residenciales`, `bloques`, `lotes` | Mismo código de DataTable, CRUD, CSRF copiado en cada vista. |
+| 17 | Variables globales JS | Todas las vistas | `table`, `accion`, `id`, `rowNumber`, `btn_activo` en el `window` global. |
+| 18 | Sin logging de auditoría | Todos los controllers | No hay `UPDATED_BY`/`DELETED_BY`. No se sabe quién modificó qué. |
+| 19 | Sin Service/Repository layer | `app/` | Toda la lógica de negocio está en los controladores. |
+| 20 | Sin Form Requests | `app/Http/Requests/` | No existen clases de validación personalizadas. |
+| 21 | Sin tests | `tests/` | Solo hay ExampleTest de Laravel. Cero tests unitarios o de feature. |
+| 22 | Código PostgreSQL-pegado | Todos los controllers | `RETURNING`, `GENERATE_SERIES`, `ILIKE`, `TO_CHAR`, `NOW()` — no portable. |
+| 23 | Sin type hints | Todos los controllers | Parámetros y returns sin tipar (excepto `$request`). |
+| 24 | `Use Session;` con mayúscula | `ClientesController.php:8` | Viola PSR-2/12 (PHP case-insensitive pero mala práctica). |
+
+### 🟡 MEDIOS (Calidad de código / Deuda técnica)
+
+| # | Problema | Archivo | Descripción |
+|---|----------|---------|-------------|
+| 25 | Código comentado | `AuthController.php:54-61` | Bloque de lógica comentada de login alternativo. |
+| 26 | Indentación mixta | Todas las vistas | Tabs y espacios mezclados. |
+| 27 | CSS repetido en `@push` | Todos los blades | Mismas reglas de estilo copiadas en 7+ vistas. |
+| 28 | `<style>` inline | Todos los blades | Estilos embebidos en lugar de clases Bootstrap o CSS dedicado. |
+| 29 | `alt` pobres en imágenes | `residenciales.blade.php` | `alt="user"`, `alt="..."` sin descripción. |
+| 30 | Ruta catch-all 404 | `routes/web.php:63-65` | Puede interferir con rutas no definidas. |
+| 31 | Sin named routes | `routes/web.php` | Todas las URLs con `url('/...')` en lugar de `route('name')`. |
+| 32 | Sin archivos JS dedicados | `resources/` | Todo el JS está inline en los blades. |
+| 33 | `$request->id` sin null check | Todos los controllers | Update/delete sin validar que `$id` exista. |
+| 34 | N+1 query | `ver_lotes():487-489` | Consulta separada para `$residencial` cuando ya está en `$bloque`. |
+| 35 | Sin índice en FECHAS_COBROS | BD | No hay índice compuesto en `ID_VENTA + FECHA_COBRO`. |
+| 36 | `DELETED_AT` no verificado | `ver_lotes():471` | LEFT JOIN con CLIENTES no filtra por `C.DELETED_AT IS NULL`. |
+| 37 | `app copy.css` sobrante | `public/css/app copy.css` | Archivo duplicado que debe eliminarse. |
+| 38 | `TO_CHAR` con locale | `ResidencialesController.php:448,468,691` | `'L999,999,999.99'` — el símbolo de moneda depende del locale. |
+| 39 | Mezcla de `?` y `:param` | `VentasController.php` | Usa tanto placeholders posicionales como nombrados. |
+| 40 | Sin capa de transacciones anidadas | Todos los controllers | `DB::beginTransaction()` sin manejo de rollback en todos los caminos. |
+| 41 | Sin límite de longitud en inputs | Todas las vistas | Inputs sin `maxlength`, pueden enviarse strings enormes. |
+| 42 | Sin `trim()` en inputs de texto | `ClientesController.php` | Los espacios al inicio/final se guardan en DB. |
+
+### 🟢 BAJOS (Cosméticos / Mejoras menores)
+
+| # | Mejora | Descripción |
+|---|--------|-------------|
+| 43 | Dashboard sin filtro por usuario | Muestra datos globales, no del usuario autenticado. |
+| 44 | Sin exportación PDF/Excel | No hay botón para exportar clientes, ventas o reportes. |
+| 45 | Sin notificaciones de cobro | No alerta sobre fechas de cobro próximas o vencidas. |
+| 46 | Sin historial de pagos completo | Solo se ve el estado actual, no el histórico de movimientos. |
+| 47 | Sin reportes financieros | No hay reportes de ingresos, morosidad, proyecciones. |
+| 48 | Sin módulo de usuarios/roles | Solo hay admin y operadores sin diferenciación de permisos. |
+| 49 | Sin recuperación de contraseña | No hay flujo de "olvidé mi contraseña". |
+| 50 | Sin caché de consultas | Las consultas pesadas (dashboard, listados) no están cacheadas. |
+| 51 | Sin API externa | No hay endpoints REST para integración con otros sistemas. |
+| 52 | Sin CI/CD | No hay GitHub Actions ni configuración de despliegue automatizado. |
+| 53 | Sin documentación de API | No hay Postman/Swagger para consumo externo. |
+| 54 | Sin i18n completo | Solo español, sin soporte multi-idioma. |
+| 55 | Sin breadcrumbs dinámicos | Los breadcrumbs están hardcodeados en cada vista. |
+| 56 | Sin loading states en AJAX | Las peticiones AJAX no muestran indicador de carga. |
+| 57 | Sin meta tags SEO | Las páginas no tienen meta description/keywords dinámicas. |
+| 58 | Sin manejo de errores 500 personalizado | Solo existe 404, no hay vista para 500. |
+| 59 | Sin CSRF en todas las rutas POST | Algunas rutas podrían no estar protegidas. |
+| 60 | Sin rate limiting | No hay límite de peticiones para prevenir abusos. |
+
+---
+
+## Plan de Acción Sugerido
+
+### Fase 1 — Inmediata (Semana 1-2)
+1. Corregir `ID_RESIDENCIAL = 1` hardcodeado → usar `$id_residencial`
+2. Implementar update real de bloques (`accion == 2`)
+3. Agregar `$request->validate()` a todos los controllers
+4. Agregar `AND ID_USER = :id_user` en todos los updates/deletes
+5. Filtrar dashboard por `Auth::id()`
+6. Reemplazar `$e->getMessage()` por logging + mensaje genérico
+7. Sanitizar paths en `Storage::delete()`
+
+### Fase 2 — Corto plazo (Mes 1-2)
+8. Crear migraciones para todas las tablas
+9. Implementar modelos Eloquent con relaciones y SoftDeletes
+10. Refactorizar patrón "accion" en métodos individuales
+11. Migrar DataTables a server-side en residenciales, bloques, lotes
+12. Extraer JS común a archivos `.js` dedicados
+13. Implementar logging de auditoría
+14. Agregar verificación de overlap en reservas
+15. Limitar `cantidad_lotes` con validación server-side
+16. Agregar Form Request classes
+
+### Fase 3 — Mediano plazo (Mes 2-4)
+17. Separar Service/Repository layer
+18. Escribir tests unitarios y de feature (PHPUnit)
+19. Agregar paginación server-side en todas las tablas
+20. Implementar caché de consultas
+21. Agregar exportación PDF/Excel
+22. Implementar notificaciones de cobro
+23. Crear módulo de usuarios/roles y permisos
+24. Implementar recuperación de contraseña
+
+### Fase 4 — Largo plazo (Mes 4+)
+25. Crear API REST con Sanctum/Passport
+26. Configurar CI/CD (GitHub Actions)
+27. Agregar reportes financieros y dashboard avanzado
+28. Internacionalización (i18n)
+29. Migrar a Livewire o Inertia.js (opcional)
+30. Implementar despliegue Docker optimizado

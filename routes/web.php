@@ -28,7 +28,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ResidencialesController::class, 'ver_residenciales']);
         Route::post('/guardar', [ResidencialesController::class, 'guardar_residencial']);
         Route::get('{id_residencial}/bloques', [ResidencialesController::class, 'ver_bloques']);
+        Route::get('/{id_residencial}/estado-eliminacion', [ResidencialesController::class, 'estado_eliminacion']);
         Route::post('/bloques/guardar', [ResidencialesController::class, 'guardar_bloque']);
+        Route::get('/bloques/{id_bloque}/estado-eliminacion', [ResidencialesController::class, 'estado_eliminacion_bloque']);
         Route::get('{id_residencial}/bloques/{id_bloque}', [ResidencialesController::class, 'ver_lotes']);
         Route::post('/bloques/lotes/guardar', [ResidencialesController::class, 'guardar_lote']);
     });

@@ -71,22 +71,24 @@
                                 @foreach ($lotes as $row)
                                     <tr style="font-size: small">
                                         <td>{{ $row->id }}</td>
-                                        <td><span class="badge bg-success">{{ $row->nombre }}</span></td>
+                                        <td><h4 class="mb-0"><span class="badge bg-primary">{{ $row->nombre }}</span></h4></td>
                                         <td><small class="text-muted">{{ $row->colindancias }}</small></td>
                                         <td>{{ $row->area_formateado }}</td>
                                         <td>{{ $row->precio_formateado }}</td>
                                         <td>{{ $row->anios_financiamiento_formateado }}</td>
                                         <td>
                                             @if ($row->estado == 'Vendido')
-                                                <a href="{{ url('/ventas/detalle/' . $row->id_venta) }}" class="btn btn-azul-claro btn-xs w-100">
+                                                <a href="{{ url('/ventas/detalle/' . $row->id_venta) }}" class="btn btn-azul btn-xs w-100">
                                                     <i data-feather="shopping-bag" width="14" height="14"></i> Vendido
                                                 </a>
                                             @elseif ($row->estado == 'Reservado')
-                                                <button type="button" class="btn btn-azul-claro btn-xs w-100" onclick="Swal.fire('Reservado por:', '{{ $row->nombre_completo }}<br>Vence: {{ $row->reservado_hasta_formateado }}', 'info')">
+                                                <button type="button" class="btn btn-xs w-100 btn-reservado text-white" style="background: #d4a017; border-color: #d4a017;" data-nombre="{{ $row->nombre_completo }}" data-vence="{{ $row->reservado_hasta_formateado }}" data-imagen="{{ $row->cliente_imagen }}" data-cliente-id="{{ $row->id_cliente_reservar }}">
                                                     <i data-feather="clock" width="14" height="14"></i> Reservado
                                                 </button>
                                             @else
-                                                <span class="badge bg-outline-success w-100 text-success">Disponible</span>
+                                                <button type="button" class="btn btn-xs w-100 text-white" style="background: #2e7d32; border-color: #2e7d32; border-width: 2px;">
+                                                    <i data-feather="check-circle" width="14" height="14"></i> Disponible
+                                                </button>
                                             @endif
                                         </td>
                                         <td>
@@ -98,9 +100,11 @@
     data-area="{{ $row->area }}" data-financiamiento="{{ $row->anios_financiamiento }}">
                                                         <i data-feather="edit-2" width="14" height="14"></i> Editar
                                                     </button>
-                                                    <button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}">
-                                                        <i data-feather="trash-2" width="14" height="14"></i> Eliminar
-                                                    </button>
+                                                    @if ($row->estado == 'Disponible')
+                                                        <button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="{{ $row->id }}" data-nombre="{{ $row->nombre }}">
+                                                            <i data-feather="trash-2" width="14" height="14"></i> Eliminar
+                                                        </button>
+                                                    @endif
 
                                                     @if ($row->estado == 'Reservado')
                                                         <button type="button" class="btn btn-negro btn-xs btn_quitar_reserva" data-id="{{ $row->id }}">
@@ -229,12 +233,12 @@
         function construirFilaLote(r) {
             var estadoHtml = '';
             if (r.estado == 'Vendido') {
-                estadoHtml = '<a href="{{ url('/ventas/detalle') }}/' + r.id_venta + '" class="btn btn-azul-claro btn-xs w-100"><i data-feather="shopping-bag" width="14" height="14"></i> Vendido</a>';
+                estadoHtml = '<a href="{{ url('/ventas/detalle') }}/' + r.id_venta + '" class="btn btn-azul btn-xs w-100"><i data-feather="shopping-bag" width="14" height="14"></i> Vendido</a>';
             } else if (r.estado == 'Reservado') {
                 var nombreComp = (r.nombre_completo || '').replace(/'/g, '&#39;');
-                estadoHtml = '<button type="button" class="btn btn-azul-claro btn-xs w-100" onclick="Swal.fire(\'Reservado por:\', \'' + nombreComp + '<br>Vence: ' + r.reservado_hasta_formateado + '\', \'info\')"><i data-feather="clock" width="14" height="14"></i> Reservado</button>';
+                estadoHtml = '<button type="button" class="btn btn-xs w-100 btn-reservado text-white" style="background:#d4a017;border-color:#d4a017;" data-nombre="' + nombreComp + '" data-vence="' + (r.reservado_hasta_formateado || '') + '" data-imagen="' + (r.cliente_imagen || '') + '" data-cliente-id="' + (r.id_cliente_reservar || '') + '"><i data-feather="clock" width="14" height="14"></i> Reservado</button>';
             } else {
-                estadoHtml = '<span class="badge bg-outline-success w-100 text-success">Disponible</span>';
+                estadoHtml = '<button type="button" class="btn btn-xs w-100 text-white" style="background: #2e7d32; border-color: #2e7d32; border-width: 2px;"><i data-feather="check-circle" width="14" height="14"></i> Disponible</button>';
             }
 
             var opcionesHtml = '';
@@ -242,7 +246,7 @@
                 opcionesHtml +=
                     '<div class="d-flex gap-1">' +
                     '<button type="button" class="btn btn-azul-claro btn-xs btn_editar_lote" data-bs-toggle="modal" data-bs-target="#modal_agregar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '" data-precio="' + r.precio + '" data-norte="' + r.norte + '" data-sur="' + r.sur + '" data-este="' + r.este + '" data-oeste="' + r.oeste + '" data-area="' + r.area + '" data-financiamiento="' + r.anios_financiamiento + '"><i data-feather="edit-2" width="14" height="14"></i> Editar</button>' +
-                    '<button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '"><i data-feather="trash-2" width="14" height="14"></i> Eliminar</button>';
+                    (r.estado == 'Disponible' ? '<button type="button" class="btn btn-danger btn-xs btn_eliminar_lote" data-id="' + r.id + '" data-nombre="' + r.nombre + '"><i data-feather="trash-2" width="14" height="14"></i> Eliminar</button>' : '');
 
                 if (r.estado == 'Reservado') {
                     opcionesHtml += '<button type="button" class="btn btn-negro btn-xs btn_quitar_reserva" data-id="' + r.id + '"><i data-feather="user-x" width="14" height="14"></i> Quitar Reserva</button>';
@@ -257,7 +261,7 @@
 
             return [
                 r.id,
-                '<span class="badge bg-success">' + r.nombre + '</span>',
+                '<h4 class="mb-0"><span class="badge bg-primary">' + r.nombre + '</span></h4>',
                 r.colindancias,
                 r.area_formateado,
                 r.precio_formateado,
@@ -275,7 +279,23 @@
             $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': csrfToken() } });
             table = $('#tbl_lotes').DataTable({
                 responsive: true,
-                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" }
+                language: {
+                    processing: "Procesando...",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    zeroRecords: "No se encontraron resultados",
+                    emptyTable: "Ningún dato disponible en esta tabla",
+                    info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                    infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+                    infoFiltered: "(filtrado de un total de _MAX_ registros)",
+                    search: "Buscar:",
+                    loadingRecords: "Cargando...",
+                    paginate: {
+                        first: "Primero",
+                        last: "Último",
+                        next: "Siguiente",
+                        previous: "Anterior"
+                    }
+                }
             });
             $('.select2').select2({ dropdownParent: $('#modal_reservar_lote') });
         });
@@ -481,6 +501,22 @@
                     }
                     Swal.fire('Éxito', res.msgSuccess, 'success');
                 }
+            });
+        });
+        $(document).on("click", ".btn-reservado", function() {
+            var nombre = $(this).data("nombre");
+            var vence = $(this).data("vence");
+            var imagen = $(this).data("imagen");
+            var clienteId = $(this).data("cliente-id");
+            var imgSrc = '{{ asset("storage/clientes/cli_") }}' + clienteId + '/' + (imagen || '');
+            var imgHtml = '<img src="' + imgSrc + '" class="rounded-circle mb-2" style="width:80px;height:80px;object-fit:cover;border:3px solid var(--ins-azul);" onerror="this.onerror=null; this.src=\'{{ asset('/assets/images/placeholder_user.png') }}\';">';
+            Swal.fire({
+                title: '<span style="color:var(--ins-azul);">Reservado por</span>',
+                html: imgHtml + '<br><strong style="color:var(--ins-negro);">' + nombre + '</strong><br><span style="color:var(--ins-gris);">Vence: ' + vence + '</span>',
+                confirmButtonText: 'Cerrar',
+                confirmButtonColor: 'var(--ins-azul)',
+                customClass: { popup: 'border-azul' },
+                didOpen: function() { feather.replace(); }
             });
         });
     </script>

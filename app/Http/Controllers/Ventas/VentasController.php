@@ -17,7 +17,7 @@ class VentasController extends Controller
         $parts = explode('.', str_replace(',', '', (string)$valor));
         $entero = $parts[0] ?? '0';
         $decimal = isset($parts[1]) ? str_pad(substr($parts[1], 0, 2), 2, '0') : '00';
-        return intval($entero . $decimal);
+        return (int) round((float)$entero * 100 + (int)$decimal);
     }
 
     private function fromCentavos($centavos)
@@ -75,9 +75,90 @@ class VentasController extends Controller
         ORDER BY 
             V.CREATED_AT DESC");
 
-        return view('terranova.ventas.ventas')
-        ->with('ventas_pendientes', $ventas_pendientes)
-        ->with('ventas_pagadas', $ventas_pagadas);
+        return view('terranova.ventas.ventas');
+    }
+
+    public function datos_ventas(Request $request)
+    {
+        $id_user = Auth::id();
+        $draw = (int) $request->input('draw');
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 10);
+        $search = $request->input('search.value', '');
+        $estado = $request->input('estado', 'Activo');
+
+        $estadoPendienteId = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Activo'"))->first()->id;
+        $estadoPagadoId = collect(DB::select("SELECT ID FROM CATALOGO_ESTADO_VENTA WHERE NOMBRE = 'Pagado'"))->first()->id;
+        $estadoId = ($estado == 'Pagado') ? $estadoPagadoId : $estadoPendienteId;
+
+        $where = "V.DELETED_AT IS NULL AND V.ESTADO = :estado AND C.ID_USER = :id_user";
+        $params = ['estado' => $estadoId, 'id_user' => $id_user];
+
+        if (!empty($search)) {
+            $where .= " AND (
+                TRIM(
+                    COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
+                    COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
+                ) ILIKE :search
+            )";
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $total = DB::select("SELECT COUNT(*) AS total FROM VENTAS V
+            JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            WHERE V.DELETED_AT IS NULL AND V.ESTADO = :estado AND C.ID_USER = :id_user", 
+            ['estado' => $estadoId, 'id_user' => $id_user])[0]->total;
+
+        $filtered = DB::select("SELECT COUNT(*) AS total FROM VENTAS V
+            JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            WHERE {$where}", $params)[0]->total;
+
+        $orderColIdx = (int) $request->input('order.0.column', 1);
+        $orderDir = $request->input('order.0.dir', 'desc');
+        $orderCols = ['V.ID', 'V.FECHA_VENTA', 'CLIENTE', 'TP.NOMBRE', 'V.TOTAL_PAGAR'];
+        $orderCol = $orderCols[$orderColIdx] ?? 'V.CREATED_AT';
+        $orderDirSql = strtoupper($orderDir) === 'DESC' ? 'DESC NULLS LAST' : 'ASC NULLS LAST';
+
+        $data = DB::select("
+            SELECT V.ID, V.FECHA_VENTA,
+                TRIM(
+                    COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') || 
+                    COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') || 
+                    COALESCE(TRIM(C.SEGUNDO_APELLIDO) || ' ', '')
+                ) AS CLIENTE,
+                TP.NOMBRE AS TIPO_PAGO, EV.NOMBRE AS ESTADO, V.TOTAL_PAGAR
+            FROM VENTAS V
+            JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            JOIN CATALOGO_TIPO_PAGO TP ON V.TIPO_PAGO = TP.ID
+            JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
+            WHERE {$where}
+            ORDER BY {$orderCol} {$orderDirSql}
+            LIMIT {$length} OFFSET {$start}
+        ", $params);
+
+        $results = array_map(function($r) {
+            $badge = ($r->estado == 'Pagado') ? 'bg-success' : 'bg-warning text-dark';
+            return [
+                'id' => $r->id,
+                'fecha_venta' => $r->fecha_venta,
+                'cliente' => $r->cliente,
+                'tipo_pago' => $r->tipo_pago,
+                'total_pagar' => number_format($r->total_pagar, 2),
+                'estado' => $r->estado,
+                'badge' => $badge,
+                'detalle_url' => url('/ventas/detalle/' . $r->id),
+            ];
+        }, $data);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => (int) $total,
+            'recordsFiltered' => (int) $filtered,
+            'data' => $results
+        ]);
     }
 
     public function ver_vender()
@@ -109,6 +190,23 @@ class VentasController extends Controller
 
     public function guardar_venta(Request $request)
     {
+        $validated = $request->validate([
+            'id_cliente' => 'required|integer|exists:clientes,id',
+            'tipo_pago' => 'required|in:Contado,Financiado',
+            'fecha_venta' => 'required|date',
+            'total_contado' => 'required|numeric|min:0',
+            'anios_financiamiento' => 'required|integer|min:0|max:50',
+            'tasa_interes' => 'required|numeric|min:0|max:100',
+            'prima' => 'required|numeric|min:0',
+            'cuotas' => 'required|integer|min:0|max:600',
+            'total_intereses' => 'required|numeric|min:0',
+            'total_pagar' => 'required|numeric|min:0',
+            'cuota_mensual' => 'required|numeric|min:0',
+            'dia_cobro_mes' => 'required|integer|min:1|max:28',
+            'lotes' => 'required|array|min:1',
+            'lotes.*' => 'integer|exists:lotes,id',
+        ]);
+
         DB::beginTransaction();
         try {
             $id_cliente = $request->id_cliente;
@@ -123,10 +221,18 @@ class VentasController extends Controller
             $total_pagar = $request->total_pagar;
             $cuota_mensual = $request->cuota_mensual;
             $dia_cobro_mes = $request->dia_cobro_mes;
-            $lotes_seleccionados = $request->lotes; // Array de IDs
+            $lotes_seleccionados = $request->lotes;
 
             if (empty($lotes_seleccionados)) {
                 throw new Exception("Debe seleccionar al menos un lote.");
+            }
+
+            $cliente = collect(DB::select("SELECT ID FROM CLIENTES WHERE ID = :id AND ID_USER = :id_user AND DELETED_AT IS NULL", [
+                'id' => $id_cliente,
+                'id_user' => Auth::id()
+            ]))->first();
+            if (!$cliente) {
+                throw new Exception("El cliente seleccionado no existe o no pertenece a su cuenta.");
             }
 
             $tipo_pago_id = collect(DB::select("SELECT ID FROM CATALOGO_TIPO_PAGO WHERE NOMBRE = :nombre", ['nombre' => $tipo_pago]))->first()->id;
@@ -160,7 +266,13 @@ class VentasController extends Controller
             $id_venta = $venta->id;
 
             foreach ($lotes_seleccionados as $id_lote) {
-                // Verificar disponibilidad de nuevo
+                $lote = collect(DB::select("SELECT ID, ID_CLIENTE_RESERVAR FROM LOTES WHERE ID = :id_lote AND DELETED_AT IS NULL", ['id_lote' => $id_lote]))->first();
+                if (!$lote) {
+                    throw new Exception("Uno de los lotes seleccionados no existe.");
+                }
+                if ($lote->id_cliente_reservar) {
+                    throw new Exception("Uno de los lotes seleccionados está reservado por otro cliente.");
+                }
                 $vendido = collect(DB::select("SELECT ID FROM LOTES_VENDIDOS WHERE ID_LOTE = :id_lote", ['id_lote' => $id_lote]))->first();
                 if ($vendido) {
                     throw new Exception("Uno de los lotes seleccionados ya ha sido vendido.");
@@ -274,13 +386,13 @@ class VentasController extends Controller
             $venta = collect(DB::select("SELECT CUOTA_MENSUAL FROM VENTAS WHERE ID = ?", [$idVenta]))->first();
 
             $cuotaMensualCentavos = $this->toCentavos($venta->cuota_mensual);
+            $yaPagadoCentavos = $this->toCentavos($cuota->cantidad_pago ?: 0);
 
-            if ($cuota->cantidad_pago && !$cuota->fecha_pago) {
-                $yaPagadoCentavos = $this->toCentavos($cuota->cantidad_pago);
-                $nuevaCantidadCentavos = $cuotaMensualCentavos;
+            if ($cuota->fecha_pago) {
+                $nuevaCantidadCentavos = $yaPagadoCentavos;
             } else {
-                $yaPagadoCentavos = $this->toCentavos($cuota->cantidad_pago ?: 0);
-                $nuevaCantidadCentavos = $cuota->cantidad_pago ? $this->toCentavos($cuota->cantidad_pago) : $cuotaMensualCentavos;
+                $restanteCentavos = $cuotaMensualCentavos - $yaPagadoCentavos;
+                $nuevaCantidadCentavos = $yaPagadoCentavos + $restanteCentavos;
             }
 
             DB::select("UPDATE FECHAS_COBROS SET 
@@ -359,7 +471,8 @@ class VentasController extends Controller
                 $montoOwedCentavos = $cuotaMensualCentavos - $yaPagadoCentavos;
 
                 if ($restanteCentavos >= $montoOwedCentavos) {
-                    DB::select("UPDATE FECHAS_COBROS SET FECHA_PAGO = NOW(), CANTIDAD_PAGO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$this->fromCentavos($cuotaMensualCentavos), $cuota->id]);
+                    $nuevoTotalCentavos = $yaPagadoCentavos + $montoOwedCentavos;
+                    DB::select("UPDATE FECHAS_COBROS SET FECHA_PAGO = NOW(), CANTIDAD_PAGO = ?, UPDATED_AT = NOW() WHERE ID = ?", [$this->fromCentavos($nuevoTotalCentavos), $cuota->id]);
                     $restanteCentavos -= $montoOwedCentavos;
                 } else {
                     $nuevoPagadoCentavos = $yaPagadoCentavos + $restanteCentavos;

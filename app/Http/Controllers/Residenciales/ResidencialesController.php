@@ -369,6 +369,29 @@ class ResidencialesController extends Controller
 
                 $msgSuccess = "Bloque guardado exitosamente.";
             } elseif($accion == 2){
+                DB::select("UPDATE
+                    PUBLIC.LOTES
+                SET
+                    PRECIO = :precio,
+                    AREA = :area,
+                    NORTE = :norte,
+                    SUR = :sur,
+                    ESTE = :este,
+                    OESTE = :oeste,
+                    ANIOS_FINANCIAMIENTO = :financiamiento,
+                    UPDATED_AT = NOW()
+                WHERE
+                    ID_BLOQUE_RESIDENCIAL = :id_bloque_residencial
+                    AND DELETED_AT IS NULL", [
+                    "id_bloque_residencial" => $id,
+                    "precio" => $precio_lote,
+                    "area" => $area,
+                    "norte" => $norte,
+                    "sur" => $sur,
+                    "este" => $este,
+                    "oeste" => $oeste,
+                    "financiamiento" => $financiamiento
+                ]);
 
                 $msgSuccess = "Bloque actualizado exitosamente.";
             }elseif($accion == 3){
@@ -592,12 +615,23 @@ class ResidencialesController extends Controller
         $id_cliente_reservar = $request->id_cliente_reservar;
         $reservado_hasta = $request->reservado_hasta;
 
+        $loteData = null;
         $msgSuccess = null;
         $msgError = null;
 
         DB::beginTransaction();
         try {
             if($accion == 1){
+                $maxLote = collect(DB::select("SELECT COALESCE(MAX(L.LOTE), 0) AS ultimo FROM LOTES L WHERE L.DELETED_AT IS NULL AND L.ID_BLOQUE_RESIDENCIAL = :id_bloque_residencial", ["id_bloque_residencial" => $id_bloque_residencial]))->first();
+                $ultimo = (int)$maxLote->ultimo;
+                for ($i = 1; $i <= $cantidad_lotes; $i++) {
+                    $nombre = 'L-' . ($ultimo + $i);
+                    $existe = collect(DB::select("SELECT ID FROM LOTES WHERE NOMBRE = :nombre AND DELETED_AT IS NULL", ["nombre" => $nombre]))->first();
+                    if ($existe) {
+                        throw new Exception("El nombre de lote $nombre ya existe.");
+                    }
+                }
+
                 if($cantidad_lotes > 1) {
                     DB::select("WITH max_lote AS (
                         SELECT COALESCE(MAX(L.LOTE), 0) AS ultimo
@@ -766,7 +800,6 @@ class ResidencialesController extends Controller
 
             DB::commit();
 
-            $loteData = null;
             $loteId = null;
 
             if ($accion == 1 && $cantidad_lotes <= 1) {

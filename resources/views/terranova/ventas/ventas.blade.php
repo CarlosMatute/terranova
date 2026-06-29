@@ -49,7 +49,7 @@
                     <div class="tab-content" id="myTabContent">
                         <div class="tab-pane fade show active" id="pendientes" role="tabpanel">
                             <div class="table-responsive">
-                                <table class="jambo_table table table-hover" id="tbl_ventas_pendientes" border="1">
+                                <table class="jambo_table table table-hover" id="tbl_ventas_pendientes" border="1" width="100%">
                                     <thead class="bg-azul-oscuro">
                                         <tr class="headings">
                                             <th scope="col" class="text-white">ID</th>
@@ -60,28 +60,12 @@
                                             <th scope="col" class="text-white">Opciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @foreach ($ventas_pendientes as $v)
-                                            <tr style="font-size: small">
-                                                <td>{{ $v->id }}</td>
-                                                <td>{{ $v->fecha_venta }}</td>
-                                                <td>{{ $v->cliente }}</td>
-                                                <td><span class="badge bg-warning text-dark">{{ $v->tipo_pago }}</span></td>
-                                                <td><strong>{{ number_format($v->total_pagar, 2) }}</strong></td>
-                                                <td>
-                                                    <a href="{{ url('/ventas/detalle/' . $v->id) }}" class="btn btn-azul-claro btn-xs">
-                                                        <i data-feather="eye" width="14" height="14"></i> Ver Detalle
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
                                 </table>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="pagadas" role="tabpanel">
                             <div class="table-responsive">
-                                <table class="jambo_table table table-hover" id="tbl_ventas_pagadas" border="1">
+                                <table class="jambo_table table table-hover" id="tbl_ventas_pagadas" border="1" width="100%">
                                     <thead class="bg-azul-oscuro">
                                         <tr class="headings">
                                             <th scope="col" class="text-white">ID</th>
@@ -92,22 +76,6 @@
                                             <th scope="col" class="text-white">Opciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        @foreach ($ventas_pagadas as $v)
-                                            <tr style="font-size: small">
-                                                <td>{{ $v->id }}</td>
-                                                <td>{{ $v->fecha_venta }}</td>
-                                                <td>{{ $v->cliente }}</td>
-                                                <td><span class="badge bg-success">{{ $v->tipo_pago }}</span></td>
-                                                <td><strong>{{ number_format($v->total_pagar, 2) }}</strong></td>
-                                                <td>
-                                                    <a href="{{ url('/ventas/detalle/' . $v->id) }}" class="btn btn-azul-claro btn-xs">
-                                                        <i data-feather="eye" width="14" height="14"></i> Ver Detalle
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -126,20 +94,40 @@
 
 @push('custom-scripts')
     <script>
+        var ventasDT = {};
         $(document).ready(function() {
             var lang = { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" };
-            $('#tbl_ventas_pendientes').DataTable({
+            var cols = [
+                { data: 'id' },
+                { data: 'fecha_venta' },
+                { data: 'cliente' },
+                { data: 'tipo_pago', render: function(d, t, r) { return '<span class="badge ' + r.badge + '">' + d + '</span>'; } },
+                { data: 'total_pagar', render: function(d) { return '<strong>' + d + '</strong>'; } },
+                { data: 'detalle_url', render: function(d) { return '<a href="' + d + '" class="btn btn-azul-claro btn-xs"><i data-feather="eye" width="14" height="14"></i> Ver Detalle</a>'; }, orderable: false }
+            ];
+            var dtOpts = {
                 responsive: true,
-                language: lang
-            });
+                serverSide: true,
+                processing: true,
+                language: lang,
+                ajax: {
+                    url: "{{ url('/ventas/datos') }}",
+                    data: function(d) { d.estado = $(this).closest('.tab-pane').attr('id') == 'pagadas' ? 'Pagado' : 'Activo'; }
+                },
+                columns: cols,
+                order: [[1, 'desc']],
+                drawCallback: function() { feather.replace(); }
+            };
+            ventasDT.pendientes = $('#tbl_ventas_pendientes').DataTable($.extend({}, dtOpts, {
+                ajax: { url: "{{ url('/ventas/datos') }}", data: function(d) { d.estado = 'Activo'; } }
+            }));
 
             $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
                 var target = $(e.target).attr('href');
-                if (target == '#pagadas' && !$.fn.dataTable.isDataTable('#tbl_ventas_pagadas')) {
-                    $('#tbl_ventas_pagadas').DataTable({
-                        responsive: true,
-                        language: lang
-                    });
+                if (target == '#pagadas' && !ventasDT.pagadas) {
+                    ventasDT.pagadas = $('#tbl_ventas_pagadas').DataTable($.extend({}, dtOpts, {
+                        ajax: { url: "{{ url('/ventas/datos') }}", data: function(d) { d.estado = 'Pagado'; } }
+                    }));
                 }
             });
         });

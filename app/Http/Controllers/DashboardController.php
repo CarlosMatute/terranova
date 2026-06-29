@@ -10,17 +10,27 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $id_user = Auth::id();
+
         // Estadísticas del mes actual
         $stats = collect(DB::select("
-            WITH TOTAL AS (
+            WITH VENTAS_USER AS (
+                SELECT ID, CUOTA_MENSUAL FROM VENTAS WHERE DELETED_AT IS NULL AND ID_CLIENTE IN (
+                    SELECT ID FROM CLIENTES WHERE ID_USER = :id_user
+                )
+            ),
+            TOTAL AS (
                 SELECT COALESCE(SUM(V.CUOTA_MENSUAL), 0) AS TOTAL_COBRAR
-                FROM VENTAS V
+                FROM VENTAS_USER V
                 JOIN FECHAS_COBROS FC ON V.ID = FC.ID_VENTA
                 WHERE TO_CHAR(FC.FECHA_COBRO, 'MM-YYYY') = TO_CHAR(NOW(), 'MM-YYYY')
-            ), PAGADO AS (
-                SELECT COALESCE(SUM(CANTIDAD_PAGO), 0) AS TOTAL_PAGADO
-                FROM FECHAS_COBROS
-                WHERE TO_CHAR(FECHA_COBRO, 'MM-YYYY') = TO_CHAR(NOW(), 'MM-YYYY') AND FECHA_PAGO IS NOT NULL
+            ),
+            PAGADO AS (
+                SELECT COALESCE(SUM(FC.CANTIDAD_PAGO), 0) AS TOTAL_PAGADO
+                FROM FECHAS_COBROS FC
+                JOIN VENTAS_USER V ON FC.ID_VENTA = V.ID
+                WHERE TO_CHAR(FC.FECHA_COBRO, 'MM-YYYY') = TO_CHAR(NOW(), 'MM-YYYY')
+                  AND FC.FECHA_PAGO IS NOT NULL
             )
             SELECT 
                 TO_CHAR(NOW(), 'Month') AS MES_ACTUAL,
@@ -29,14 +39,16 @@ class DashboardController extends Controller
                 (TOTAL_COBRAR - TOTAL_PAGADO) AS RESTANTE,
                 CASE WHEN TOTAL_COBRAR > 0 THEN ROUND((TOTAL_PAGADO * 100 / TOTAL_COBRAR), 1) ELSE 0 END AS PORCENTAJE
             FROM TOTAL, PAGADO
-        "))->first();
+        ", ['id_user' => $id_user]))->first();
 
-        // Conteos generales
+        // Conteos generales (filtrados por usuario)
         $lotes_disponibles = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM LOTES WHERE ID_CLIENTE_RESERVAR IS NULL AND DELETED_AT IS NULL"))->first();
-        $clientes_totales = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM CLIENTES WHERE DELETED_AT IS NULL"))->first();
+        $clientes_totales = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM CLIENTES WHERE DELETED_AT IS NULL AND ID_USER = :id_user", ['id_user' => $id_user]))->first();
         $ventas_activas = collect(DB::select("SELECT COUNT(*) AS TOTAL FROM VENTAS V
             JOIN CATALOGO_ESTADO_VENTA EV ON V.ESTADO = EV.ID
-            WHERE EV.NOMBRE = 'Activo' AND V.DELETED_AT IS NULL"))->first();
+            WHERE EV.NOMBRE = 'Activo' AND V.DELETED_AT IS NULL AND V.ID_CLIENTE IN (
+                SELECT ID FROM CLIENTES WHERE ID_USER = :id_user
+            )", ['id_user' => $id_user]))->first();
 
         // Datos para gráfica lineal (últimos 12 meses)
         $chart_data = DB::select("
@@ -49,9 +61,10 @@ class DashboardController extends Controller
             JOIN VENTAS V ON FC.ID_VENTA = V.ID
             WHERE FC.FECHA_COBRO >= NOW() - INTERVAL '12 months'
               AND V.DELETED_AT IS NULL
+              AND V.ID_CLIENTE IN (SELECT ID FROM CLIENTES WHERE ID_USER = :id_user)
             GROUP BY TO_CHAR(FC.FECHA_COBRO, 'YYYY-MM'), TO_CHAR(FC.FECHA_COBRO, 'Mon')
             ORDER BY MES
-        ");
+        ", ['id_user' => $id_user]);
 
         return view('dashboard')
         ->with('stats', $stats)

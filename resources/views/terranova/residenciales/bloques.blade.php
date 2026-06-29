@@ -142,8 +142,8 @@
                                         <div class="mb-3" id="div_modal_agregar_bloque_precio_lotes">
                                             <label for="modal_agregar_bloque_precio_lotes" class="form-label">Precio de
                                                 Lotes</label>
-                                            <input id="modal_agregar_bloque_precio_lotes" class="form-control"
-                                                type="number" placeholder="¿Cual es el precio?" />
+                                            <input id="modal_agregar_bloque_precio_lotes" class="form-control currency-input"
+                                                type="text" placeholder="¿Cual es el precio?" />
                                         </div>
                                     </div>
                                 </div>
@@ -414,7 +414,7 @@
 
         $("#btn_guardar_bloque").on("click", function() {
             cantidad_lotes = $("#modal_agregar_bloque_cantidad_lotes").val();
-            precio_lote = $("#modal_agregar_bloque_precio_lotes").val();
+            precio_lote = parseCurrency($("#modal_agregar_bloque_precio_lotes").val());
             norte = $("#modal_agregar_bloque_norte").val();
             sur = $("#modal_agregar_bloque_sur").val();
             este = $("#modal_agregar_bloque_este").val();

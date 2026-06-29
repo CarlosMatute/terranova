@@ -155,7 +155,7 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Precio del Lote</label>
-                                <input id="modal_lote_precio" class="form-control" type="number" />
+                                <input id="modal_lote_precio" class="form-control currency-input" type="text" />
                             </div>
                         </div>
                     </div>
@@ -322,7 +322,8 @@
                 $("#lbl_lote_siguiente").text(triggerLink.data("nombre"));
                 $("#lbl_lote_siguiente").removeClass("btn-azul").addClass("btn-azul-claro");
                 
-                $("#modal_lote_precio").val(triggerLink.data("precio"));
+                $("#modal_lote_precio").val(parseFloat(triggerLink.data("precio")).toFixed(2));
+                _fmtCurrency($("#modal_lote_precio"));
                 $("#modal_lote_norte").val(triggerLink.data("norte"));
                 $("#modal_lote_sur").val(triggerLink.data("sur"));
                 $("#modal_lote_este").val(triggerLink.data("este"));
@@ -375,7 +376,7 @@
                 id: id_lote,
                 id_bloque_residencial: id_bloque_residencial,
                 cantidad_lotes: $("#modal_lote_cantidad").val(),
-                precio_lote: $("#modal_lote_precio").val(),
+                precio_lote: parseCurrency($("#modal_lote_precio").val()),
                 norte: $("#modal_lote_norte").val(),
                 sur: $("#modal_lote_sur").val(),
                 este: $("#modal_lote_este").val(),

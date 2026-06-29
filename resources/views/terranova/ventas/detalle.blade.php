@@ -181,7 +181,7 @@
             </div>
             <div class="modal-body">
                 <label class="form-label">Monto a abonar (L.)</label>
-                <input type="number" class="form-control form-control-lg" id="input_monto_abono" step="0.01" min="0.01" placeholder="0.00">
+                <input type="text" class="form-control form-control-lg currency-input" id="input_monto_abono" placeholder="0.00">
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -362,7 +362,7 @@
             });
 
             $('#btn_procesar_abono').on('click', function() {
-                var monto = parseFloat($('#input_monto_abono').val());
+                var monto = parseCurrency($('#input_monto_abono').val());
                 if (!monto || monto <= 0) {
                     Swal.fire('Error', 'Ingrese un monto válido.', 'error');
                     return;

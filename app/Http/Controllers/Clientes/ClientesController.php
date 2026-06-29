@@ -46,6 +46,26 @@ class ClientesController extends Controller
 
     public function guardar_cliente(Request $request)
     {
+        $accion = $request->input('accion');
+
+        $rules = [
+            'primer_nombre' => 'required|string|max:100',
+            'segundo_nombre' => 'nullable|string|max:100',
+            'primer_apellido' => 'required|string|max:100',
+            'segundo_apellido' => 'nullable|string|max:100',
+            'identidad' => 'required|string|max:20',
+            'contacto_telefonico' => 'required|string|max:20',
+            'contacto_telefonico_2' => 'nullable|string|max:20',
+            'correo_electronico' => 'nullable|email|max:255',
+            'direccion' => 'required|string|max:500',
+        ];
+
+        if ($accion == 3) {
+            $rules = ['id' => 'required|integer|exists:clientes,id'];
+        }
+
+        $request->validate($rules);
+
         $id = $request->id;
         $primer_nombre = $request->input('primer_nombre');
         $segundo_nombre = $request->input('segundo_nombre');
@@ -57,7 +77,6 @@ class ClientesController extends Controller
         $correo_electronico = $request->input('correo_electronico');
         $direccion = $request->input('direccion');
         
-        $accion = $request->input('accion');
         $cambiar_imagen = ($request->input('cambiar_imagen') == 'true') ? true : false;
         $archivoSeleccionado = null;
         $clientes_list = null;

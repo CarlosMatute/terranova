@@ -97,7 +97,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Prima</label>
-                            <input type="number" class="form-control" id="prima" value="0">
+                            <input type="text" class="form-control currency-input" id="prima" value="0">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Día de Cobro (1-28)</label>
@@ -128,6 +128,9 @@
 @push('custom-scripts')
     <script>
         var total_contado = {{ $total_lotes }};
+        var _raw_cuota_mensual = 0;
+        var _raw_total_intereses = 0;
+        var _raw_total_pagar = 0;
         
         $(document).ready(function() {
             $('.select2').select2();
@@ -148,27 +151,39 @@
             function recalcular() {
                 var tipo = $('#tipo_pago').val();
                 if (tipo == 'Contado') {
+                    _raw_cuota_mensual = 0;
+                    _raw_total_intereses = 0;
+                    _raw_total_pagar = total_contado;
+                    $('#lbl_cuotas').text(0);
+                    $('#lbl_cuota_mensual').text('0.00');
+                    $('#lbl_total_intereses').text('0.00');
                     $('#lbl_total_pagar').text(total_contado.toLocaleString('en-US', {minimumFractionDigits: 2}));
                     return;
                 }
 
                 var anios = parseFloat($('#anios_financiamiento').val()) || 0;
                 var tasa = (parseFloat($('#tasa_interes').val()) || 0) / 100;
-                var prima = parseFloat($('#prima').val()) || 0;
+                var prima = parseCurrency($('#prima').val());
                 
                 var capital = total_contado - prima;
                 var cuotas = anios * 12;
                 
-                // Simple interest calculation (like in many lotificadoras, or use PMT for compound)
-                // Let's use simple interest for now as placeholder if formula not specified
-                var total_intereses = capital * tasa * anios;
-                var total_pagar = capital + total_intereses;
-                var cuota_mensual = (cuotas > 0) ? (total_pagar / cuotas) : 0;
+                _raw_total_intereses = capital * tasa * anios;
+                _raw_total_pagar = capital + _raw_total_intereses;
+
+                var cuota_mensual_raw = (cuotas > 0) ? (_raw_total_pagar / cuotas) : 0;
+                var cuota_mensual = Math.round(cuota_mensual_raw * 100) / 100;
+                var suma_cuotas = cuota_mensual * cuotas;
+                if (cuotas > 0 && suma_cuotas !== _raw_total_pagar) {
+                    var residual = Math.round((_raw_total_pagar - suma_cuotas) * 100) / 100;
+                    cuota_mensual = Math.round((cuota_mensual + residual) * 100) / 100;
+                }
+                _raw_cuota_mensual = cuota_mensual;
 
                 $('#lbl_cuotas').text(cuotas);
                 $('#lbl_cuota_mensual').text(cuota_mensual.toLocaleString('en-US', {minimumFractionDigits: 2}));
-                $('#lbl_total_intereses').text(total_intereses.toLocaleString('en-US', {minimumFractionDigits: 2}));
-                $('#lbl_total_pagar').text((total_pagar + prima).toLocaleString('en-US', {minimumFractionDigits: 2}));
+                $('#lbl_total_intereses').text(_raw_total_intereses.toLocaleString('en-US', {minimumFractionDigits: 2}));
+                $('#lbl_total_pagar').text((_raw_total_pagar + prima).toLocaleString('en-US', {minimumFractionDigits: 2}));
             }
 
             $('.btn_quitar').on('click', function() {
@@ -182,19 +197,20 @@
             });
 
             $('#btn_procesar_venta').on('click', function() {
+                var esContado = $('#tipo_pago').val() == 'Contado';
                 var data = {
                     id_cliente: $('#id_cliente').val(),
                     tipo_pago: $('#tipo_pago').val(),
                     fecha_venta: $('#fecha_venta').val(),
                     total_contado: total_contado,
-                    anios_financiamiento: $('#anios_financiamiento').val(),
-                    tasa_interes: $('#tasa_interes').val(),
-                    prima: $('#prima').val(),
-                    cuotas: $('#lbl_cuotas').text(),
-                    total_intereses: $('#lbl_total_intereses').text().replace(/,/g, ''),
-                    total_pagar: $('#lbl_total_pagar').text().replace(/,/g, ''),
-                    cuota_mensual: $('#lbl_cuota_mensual').text().replace(/,/g, ''),
-                    dia_cobro_mes: $('#dia_cobro_mes').val(),
+                    anios_financiamiento: esContado ? 0 : $('#anios_financiamiento').val(),
+                    tasa_interes: esContado ? 0 : $('#tasa_interes').val(),
+                    prima: esContado ? 0 : parseCurrency($('#prima').val()),
+                    cuotas: esContado ? 0 : $('#lbl_cuotas').text(),
+                    total_intereses: esContado ? 0 : _raw_total_intereses,
+                    total_pagar: esContado ? total_contado : (_raw_total_pagar + parseCurrency($('#prima').val())),
+                    cuota_mensual: esContado ? 0 : _raw_cuota_mensual,
+                    dia_cobro_mes: esContado ? 1 : $('#dia_cobro_mes').val(),
                 };
 
                 if (!data.id_cliente) {

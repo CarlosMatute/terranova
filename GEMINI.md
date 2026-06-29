@@ -358,6 +358,58 @@ Script PostgreSQL que genera ~150,000 registros:
 - Al editar: bloques se oculta, nombre expande a col-md-10
 - Modal de recorte reutilizado de clientes
 
+### Corrección de Bugs de Integridad (29/06/2026)
+
+**Bug #1/#2 — Sobrescritura de abonos parciales en cuotas**
+- `VentasController.php@290-298`: `pagar_cuota()` cambió de sobrescritura fija a acumulación explícita (`yaPagado + resto = total`)
+- `VentasController.php@376`: `abonar()` acumula `yaPagado + montoOwed` en vez de asignar `cuotaMensual` fija
+
+**Bug #3 — Validación de apartados al vender**
+- `VentasController.php@170-177`: `guardar_venta()` ahora verifica `LOTES.ID_CLIENTE_RESERVAR` antes de vender; lanza excepción si está reservado
+
+**Bug #4 — Multi-tenancy en ventas**
+- `VentasController.php@132-138`: `guardar_venta()` verifica que `ID_CLIENTE` pertenezca a `Auth::id()` antes de insertar
+
+**Bug #5 — Datos financieros fantasma en Contado**
+- `vender.blade.php@298-311` y `carrito.blade.php@200-213`: Al enviar Contado se envían `0` en todos los campos financieros (`anios`, `tasa`, `prima`, `cuotas`, `intereses`, `cuota_mensual`)
+
+**Bug #6 — Pérdida de precisión por redondeo en cuota**
+- `vender.blade.php@278-285` y `carrito.blade.php@174-181`: Valores RAW (`_raw_*`) enviados al servidor en vez del texto formateado del DOM; residual de redondeo distribuido en la primera cuota
+
+**Bug #7 — Desbordamiento en 32-bit**
+- `VentasController.php@20`: `toCentavos()` cambió de `intval($entero.$decimal)` a `(int) round((float)$entero*100 + (int)$decimal)`
+
+**Bug #8 — Índices faltantes en DB**
+- `lotificadora_scripts_postgres.sql@102-106`: Agregados índices: `idx_clientes_id_user`, `idx_clientes_identidad`, `idx_lotes_nombre`, `idx_ventas_id_cliente`, `idx_fechas_cobros_id_venta`
+
+**Bug #9 — Colisión de nombres en lotes**
+- `ResidencialesController.php@602-610`: Prevalidación de nombre (`L-{N}`) único antes de insertar lotes batch vía `GENERATE_SERIES`
+
+**Bug #10 — total_pagar inconsistente**
+- Confirmado que `TOTAL_PAGAR` en DB = gran total (incluye prima). Envío JS ahora explícito: `total_contado` para Contado, `_raw_total_pagar + prima` para Financiado
+
+---
+
+## Correcciones de Estabilización para Demo (29/06/2026)
+
+### Fix #1 — ID_RESIDENCIAL hardcodeado
+- Auditado: no se encontró `= 1` hardcodeado explícito. Las rutas y controladores usan correctamente `$id_residencial` desde el parámetro de ruta.
+
+### Fix #2 — Update de bloques (accion == 2)
+- `ResidencialesController.php@371-388`: Implementado UPDATE real que persiste cambios de precio, área, colindancias y financiamiento en todos los lotes del bloque.
+
+### Fix #3 — Dashboard multi-tenant
+- `DashboardController.php`: Todas las queries ahora filtran por `ID_USER` mediante subquery `ID_CLIENTE IN (SELECT ID FROM CLIENTES WHERE ID_USER = :id_user)`. Cada usuario ve solo sus propios datos.
+
+### Fix #4 — Validación server-side
+- `VentasController.guardar_venta()`: `$request->validate()` con reglas para todos los campos: required, tipos, rangos (anios 0-50, tasa 0-100, cuotas 0-600, dia_cobro 1-28, lotes array min:1).
+- `ClientesController.guardar_cliente()`: `$request->validate()` con reglas de tipo, longitud máxima (100/500), email validado, y regla simplificada para delete.
+
+### Fix #5 — Server-side DataTable en Ventas
+- `VentasController.datos_ventas()`: Nuevo endpoint `GET /ventas/datos` con paginación, búsqueda y ordenamiento server-side, filtrado por estado (Activo/Pagado) y por `ID_USER`.
+- `ventas.blade.php`: Migrado de renderizado Blade completo (1MB+ HTML) a DataTable server-side con carga AJAX bajo demanda. Reducción drástica de payload inicial.
+- `routes/web.php`: Nueva ruta `GET /ventas/datos`.
+
 ---
 
 ## Auditoría de Calidad — Recomendaciones
@@ -367,14 +419,14 @@ Script PostgreSQL que genera ~150,000 registros:
 | # | Riesgo | Archivo | Descripción |
 |---|--------|---------|-------------|
 | 1 | **Alto** | `ResidencialesController.php:331` | `ID_RESIDENCIAL = 1` hardcodeado en delete de bloque. Rompe la UI para cualquier residencial con ID distinto de 1. |
-| 2 | **Alto** | `ResidencialesController.php:298-300` | Update de bloque (`accion == 2`) no ejecuta ningún UPDATE, solo devuelve éxito sin persistir datos. |
-| 3 | **Alto** | Todos los controllers | Cero validación server-side (`$request->validate()`). Toda la validación es JS del lado cliente. |
-| 4 | **Alto** | `ResidencialesController`, `ClientesController` | Updates/deletes no verifican `ID_USER`. Cualquier usuario autenticado puede modificar/eliminar datos de otros. |
-| 5 | **Alto** | `DashboardController.php:14-54` | Dashboard no filtra por `ID_USER` — muestra datos de todos los usuarios. |
+| 2 | **Alto** | `ResidencialesController.php:298-300` | ✅ Resuelto: `accion == 2` ahora ejecuta UPDATE de precio, área, colindancias y financiamiento en todos los lotes del bloque. |
+| 3 | **Alto** | Todos los controllers | Cero validación server-side (`$request->validate()`). Toda la validación es JS del lado cliente. (✅ Parcial: `VentasController.guardar_venta` y `ClientesController.guardar_cliente` ahora tienen validate()) |
+| 4 | **Alto** | `ResidencialesController`, `ClientesController` | Updates/deletes no verifican `ID_USER`. Cualquier usuario autenticado puede modificar/eliminar datos de otros. (✅ Parcial: `VentasController.guardar_venta` ya verifica pertenencia del cliente) |
+| 5 | **Alto** | `DashboardController.php:14-54` | ✅ Resuelto: Dashboard ahora filtra ventas por `ID_USER` mediante subquery a CLIENTES. Cada usuario ve solo sus propios datos. |
 | 6 | **Alto** | `ClientesController.php:287-338` | SQL dinámico concatenado (`$where`) sin prepared statements completos. |
 | 7 | **Medio** | Todos los controllers | `$e->getMessage()` expuesto al frontend — filtra detalles internos (tablas, constraints, etc.). |
 | 8 | **Medio** | `ResidencialesController.php:115` | `Storage::delete()` con nombre de imagen del usuario sin sanitizar (path traversal). |
-| 9 | **Medio** | `guardar_lote():645-658` | No hay verificación de overlap en reservas — dos usuarios pueden reservar el mismo lote. |
+| 9 | **Medio** | `guardar_lote():645-658` | No hay verificación de overlap en reservas — dos usuarios pueden reservar el mismo lote. (✅ Parcial: `guardar_venta` ahora valida que lote no esté reservado antes de vender) |
 | 10 | **Medio** | `guardar_bloque():285-295` | Inserción masiva con `GENERATE_SERIES` sin límite superior. |
 | 11 | **Bajo** | `.env` | Contraseña de DB en texto plano en repositorio. |
 
@@ -410,7 +462,7 @@ Script PostgreSQL que genera ~150,000 registros:
 | 32 | Sin archivos JS dedicados | `resources/` | Todo el JS está inline en los blades. |
 | 33 | `$request->id` sin null check | Todos los controllers | Update/delete sin validar que `$id` exista. |
 | 34 | N+1 query | `ver_lotes():487-489` | Consulta separada para `$residencial` cuando ya está en `$bloque`. |
-| 35 | Sin índice en FECHAS_COBROS | BD | No hay índice compuesto en `ID_VENTA + FECHA_COBRO`. |
+| 35 | Sin índice en FECHAS_COBROS | BD | ✅ Resuelto: `idx_fechas_cobros_id_venta` agregado al schema SQL. |
 | 36 | `DELETED_AT` no verificado | `ver_lotes():471` | LEFT JOIN con CLIENTES no filtra por `C.DELETED_AT IS NULL`. |
 | 37 | `app copy.css` sobrante | `public/css/app copy.css` | Archivo duplicado que debe eliminarse. |
 | 38 | `TO_CHAR` con locale | `ResidencialesController.php:448,468,691` | `'L999,999,999.99'` — el símbolo de moneda depende del locale. |
@@ -483,3 +535,78 @@ Script PostgreSQL que genera ~150,000 registros:
 28. Internacionalización (i18n)
 29. Migrar a Livewire o Inertia.js (opcional)
 30. Implementar despliegue Docker optimizado
+
+---
+
+## Pruebas de Carga y Estrés — 29/06/2026
+
+### Entorno
+- **Servidor:** Windows 11 Pro, Intel i7-6700 @3.4GHz (4 núcleos, 4 lógicos), 24GB RAM
+- **PHP:** 8.2.4, memory_limit=512M, OPcache desactivado
+- **Base de datos:** PostgreSQL 18, ~150k registros totales
+- **Herramienta:** ApacheBench 2.3
+
+### Pruebas de Carga (100 requests, 10 concurrentes)
+
+| Endpoint | RPS | Avg (ms) | P95 (ms) | Errores |
+|----------|-----|----------|----------|---------|
+| Login (GET, sin auth) | 17.75/s | 520 | 631 | 3 |
+| Dashboard (GET /) | 10.57/s | 887 | 1,126 | 4 |
+| Clientes DataTable (GET /clientes/datos) | 12.36/s | 760 | 987 | 2 |
+
+### Pruebas de Estrés (alta concurrencia)
+
+| Endpoint | Requests | Concurrencia | RPS | Avg (ms) | P95 (ms) |
+|----------|----------|-------------|-----|----------|----------|
+| Dashboard | 50 | 25 | 9.81/s | 2,549 | 2,835 |
+| Clientes DataTable | 50 | 25 | 11.90/s | 2,101 | 2,514 |
+| Login (sin auth) | 200 | 50 | 17.74/s | 2,819 | 2,909 |
+| Clientes Search (ILIKE) | 50 | 25 | 11.23/s | 2,225 | 2,335 |
+| Ventas Page | 30 | 15 | 10.10/s | 1,486 | 1,605 |
+
+### Análisis de Base de Datos (EXPLAIN ANALYZE)
+
+Las queries individuales son rápidas (2–7ms), pero bajo concurrencia degradan por falta de índices en columnas de JOIN/WHERE.
+
+**Índices existentes:** PRIMARY KEY + 5 índices agregados (29/06/2026):
+- `idx_clientes_id_user ON CLIENTES(ID_USER)`
+- `idx_clientes_identidad ON CLIENTES(IDENTIDAD)`
+- `idx_lotes_nombre ON LOTES(NOMBRE)`
+- `idx_ventas_id_cliente ON VENTAS(ID_CLIENTE)`
+- `idx_fechas_cobros_id_venta ON FECHAS_COBROS(ID_VENTA)`
+
+**Índices faltantes (aún pendientes):**
+- `LOTES (ID_BLOQUE_RESIDENCIAL)`
+- `LOTES (ID_CLIENTE_RESERVAR)`
+- `BLOQUES_RESIDENCIALES (ID_RESIDENCIAL, ID_BLOQUE)`
+
+### Tamaños de Tabla
+
+| Tabla | Tamaño | Filas |
+|-------|--------|-------|
+| REFERENCIAS | 2,256 kB | 15,000 |
+| BENEFICIARIOS | 1,928 kB | 10,000 |
+| FECHAS_COBROS | 1,600 kB | 18,012 |
+| CLIENTES | 912 kB | 5,000 |
+| VENTAS | 208 kB | 1,001 |
+| LOTES | 128 kB | 530 |
+
+### Calificación del Proyecto: **4/10**
+
+**Fortalezas:**
+- Funcionalidad core operativa (CRUD lotes, ventas, clientes)
+- Server-side DataTable en clientes (bien implementado)
+- Multi-tenancy por ID_USER
+- Interfaz funcional con Bootstrap + DataTables + Select2
+
+**Debilidades:**
+- ~~Sin índices en columnas de JOIN/WHERE~~ ✅ **5 índices agregados** (29/06): `idx_clientes_id_user`, `idx_clientes_identidad`, `idx_lotes_nombre`, `idx_ventas_id_cliente`, `idx_fechas_cobros_id_venta`
+- **Sin tests** automatizados (unitarios, feature, ni siquiera uno)
+- SQL crudo en toda la app — sin Eloquent, sin migraciones, sin modelos
+- ✅ **Validación server-side agregada** en `VentasController.guardar_venta()` y `ClientesController.guardar_cliente()`
+- **OPcache desactivado** — cada request recompila PHP
+- ✅ **Ventas migrado a server-side DataTable** — ya no carga HTML masivo
+- ~10–18 RPS bajo carga, P95 de hasta 2.8s en estrés
+- Código con deuda técnica: patrón "accion" (switch numérico), JS inline, variables globales
+
+**Potencial:** Con índices bien puestos (✅ 5 agregados, quedan 3 críticos) + OPcache → ~6/10. Con refactor a Eloquent + migraciones + tests → ~8/10.

@@ -133,6 +133,32 @@ License: For each use you must have a valid license purchased only from above li
     <script src="{{ asset('assets/js/template.js') }}"></script>
     <!-- end common js -->
 
+    <script>
+    function parseCurrency(val) {
+        if (!val) return 0;
+        return parseFloat(val.toString().replace(/[^0-9.-]/g, '')) || 0;
+    }
+    function _fmtCurrency(el) {
+        var raw = $(el).val().replace(/[^0-9.]/g, '');
+        if (raw === '') { $(el).val(''); return; }
+        var parts = raw.split('.');
+        if (parts.length > 2) parts = [parts[0], parts.slice(1).join('')];
+        var intPart = parts[0].replace(/^0+(\d)/, '$1');
+        if (intPart === '') intPart = '0';
+        var decPart = parts.length > 1 ? parts[1].slice(0, 2) : '';
+        if (intPart.length > 3) intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        $(el).val(intPart === '0' && decPart === '' ? '' : 'L ' + intPart + (decPart !== '' ? '.' + decPart : ''));
+    }
+    $(document).on('input', '.currency-input', function() {
+        var cursor = this.selectionStart;
+        var len = $(this).val().length;
+        _fmtCurrency(this);
+        try {
+            var diff = $(this).val().length - len;
+            this.setSelectionRange(cursor + diff, cursor + diff);
+        } catch(e) {}
+    });
+    </script>
     @stack('custom-scripts')
 </body>
 </html>

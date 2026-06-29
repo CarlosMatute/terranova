@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     Route::group(['prefix' => 'ventas'], function(){
         Route::get('/', [VentasController::class, 'ver_ventas']);
+        Route::get('/datos', [VentasController::class, 'datos_ventas']);
         Route::post('/guardar', [VentasController::class, 'guardar_venta']);
         Route::get('/detalle/{id}', [VentasController::class, 'ver_detalle_venta']);
         Route::post('/pagar-cuota', [VentasController::class, 'pagar_cuota']);

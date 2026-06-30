@@ -163,29 +163,7 @@ class VentasController extends Controller
 
     public function ver_vender()
     {
-        $lotes_disponibles = DB::select("SELECT 
-            L.ID,
-            L.NOMBRE AS LOTE,
-            B.NOMBRE AS BLOQUE,
-            R.NOMBRE AS RESIDENCIAL,
-            L.PRECIO,
-            L.ANIOS_FINANCIAMIENTO,
-            L.AREA
-        FROM 
-            LOTES L
-            JOIN BLOQUES_RESIDENCIALES BR ON L.ID_BLOQUE_RESIDENCIAL = BR.ID
-            JOIN BLOQUES B ON BR.ID_BLOQUE = B.ID
-            JOIN RESIDENCIALES R ON BR.ID_RESIDENCIAL = R.ID
-            LEFT JOIN LOTES_VENDIDOS LV ON L.ID = LV.ID_LOTE
-        WHERE 
-            L.DELETED_AT IS NULL
-            AND L.ID_CLIENTE_RESERVAR IS NULL
-            AND LV.ID_LOTE IS NULL
-        ORDER BY 
-            R.NOMBRE, B.NOMBRE, L.ID");
-
-        return view('terranova.ventas.vender')
-        ->with('lotes_disponibles', $lotes_disponibles);
+        return view('terranova.ventas.vender');
     }
 
     public function guardar_venta(Request $request)
@@ -494,5 +472,138 @@ class VentasController extends Controller
             DB::rollback();
             return response()->json(['msgError' => $e->getMessage()]);
         }
+    }
+
+    public function datos_lotes_disponibles(Request $request)
+    {
+        $id_user = Auth::id();
+        $draw = (int) $request->input('draw');
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 10);
+        $search = $request->input('search.value', '');
+
+        $where = "L.DELETED_AT IS NULL AND L.ID_CLIENTE_RESERVAR IS NULL AND R.ID_USER = :id_user
+                  AND NOT EXISTS (SELECT 1 FROM LOTES_VENDIDOS LV WHERE LV.ID_LOTE = L.ID AND LV.DELETED_AT IS NULL)";
+        $params = ['id_user' => $id_user];
+
+        if (!empty($search)) {
+            $where .= " AND (L.NOMBRE ILIKE :search1 OR B.NOMBRE ILIKE :search2 OR R.NOMBRE ILIKE :search3 OR CAST(L.LOTE AS TEXT) ILIKE :search4)";
+            $term = '%' . $search . '%';
+            $params['search1'] = $term;
+            $params['search2'] = $term;
+            $params['search3'] = $term;
+            $params['search4'] = $term;
+        }
+
+        $total = DB::select("SELECT COUNT(*) AS TOTAL
+            FROM LOTES L
+            JOIN BLOQUES_RESIDENCIALES BR ON L.ID_BLOQUE_RESIDENCIAL = BR.ID
+            JOIN BLOQUES B ON BR.ID_BLOQUE = B.ID
+            JOIN RESIDENCIALES R ON BR.ID_RESIDENCIAL = R.ID
+            WHERE {$where}", $params)[0]->total;
+
+        $orderColIdx = (int) $request->input('order.0.column', 0);
+        $orderDir = $request->input('order.0.dir', 'asc');
+        $orderCols = ['L.ID', 'R.NOMBRE', 'B.NOMBRE', 'L.NOMBRE', 'L.PRECIO', 'L.AREA'];
+        $orderCol = $orderCols[$orderColIdx] ?? 'R.NOMBRE';
+        $orderDirSql = strtoupper($orderDir) === 'DESC' ? 'DESC NULLS LAST' : 'ASC NULLS LAST';
+
+        $lotes = DB::select("
+            SELECT L.ID, L.NOMBRE AS LOTE, B.NOMBRE AS BLOQUE,
+                   R.ID AS ID_RESIDENCIAL, R.IMAGEN, R.NOMBRE AS RESIDENCIAL, L.PRECIO, L.AREA
+            FROM LOTES L
+            JOIN BLOQUES_RESIDENCIALES BR ON L.ID_BLOQUE_RESIDENCIAL = BR.ID
+            JOIN BLOQUES B ON BR.ID_BLOQUE = B.ID
+            JOIN RESIDENCIALES R ON BR.ID_RESIDENCIAL = R.ID
+            WHERE {$where}
+            ORDER BY {$orderCol} {$orderDirSql}
+            LIMIT {$length} OFFSET {$start}
+        ", $params);
+
+        $results = array_map(function($l) {
+            $src = url('storage/residenciales/res_' . $l->id_residencial . '/' . $l->imagen);
+            return [
+                'id' => $l->id,
+                'residencial' => $l->residencial,
+                'id_residencial' => $l->id_residencial,
+                'imagen' => $l->imagen,
+                'img_src' => $src,
+                'bloque' => $l->bloque,
+                'lote' => $l->lote,
+                'precio' => number_format($l->precio, 2),
+                'precio_raw' => (float) $l->precio,
+                'area' => $l->area,
+            ];
+        }, $lotes);
+
+        return response()->json([
+            'draw' => $draw,
+            'recordsTotal' => (int) $total,
+            'recordsFiltered' => (int) $total,
+            'data' => $results,
+        ]);
+    }
+
+    public function buscar_lotes(Request $request)
+    {
+        $id_user = Auth::id();
+        $search = $request->input('q', '');
+        $page = (int) $request->input('page', 1);
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        $where = "L.DELETED_AT IS NULL AND L.ID_CLIENTE_RESERVAR IS NULL AND R.ID_USER = :id_user
+                  AND NOT EXISTS (SELECT 1 FROM LOTES_VENDIDOS LV WHERE LV.ID_LOTE = L.ID AND LV.DELETED_AT IS NULL)";
+        $params = ['id_user' => $id_user];
+
+        if (!empty($search)) {
+            $where .= " AND (L.NOMBRE ILIKE :search1 OR B.NOMBRE ILIKE :search2 OR R.NOMBRE ILIKE :search3 OR CAST(L.LOTE AS TEXT) ILIKE :search4)";
+            $term = '%' . $search . '%';
+            $params['search1'] = $term;
+            $params['search2'] = $term;
+            $params['search3'] = $term;
+            $params['search4'] = $term;
+        }
+
+        $total = DB::select("
+            SELECT COUNT(*) AS TOTAL
+            FROM LOTES L
+            JOIN BLOQUES_RESIDENCIALES BR ON L.ID_BLOQUE_RESIDENCIAL = BR.ID
+            JOIN BLOQUES B ON BR.ID_BLOQUE = B.ID
+            JOIN RESIDENCIALES R ON BR.ID_RESIDENCIAL = R.ID
+            WHERE {$where}
+        ", $params)[0]->total;
+
+        $lotes = DB::select("
+            SELECT L.ID, L.NOMBRE AS LOTE, B.NOMBRE AS BLOQUE,
+                   R.ID AS ID_RESIDENCIAL, R.IMAGEN, R.NOMBRE AS RESIDENCIAL, L.PRECIO, L.AREA
+            FROM LOTES L
+            JOIN BLOQUES_RESIDENCIALES BR ON L.ID_BLOQUE_RESIDENCIAL = BR.ID
+            JOIN BLOQUES B ON BR.ID_BLOQUE = B.ID
+            JOIN RESIDENCIALES R ON BR.ID_RESIDENCIAL = R.ID
+            WHERE {$where}
+            ORDER BY R.NOMBRE, B.NOMBRE, L.ID
+            LIMIT {$limit} OFFSET {$offset}
+        ", $params);
+
+        $results = array_map(function($l) {
+            return [
+                'id' => $l->id,
+                'text' => $l->residencial . ' - Bloque ' . $l->bloque . ' - Lote ' . $l->lote . ' (' . number_format($l->precio, 2) . ')',
+                'nombre' => $l->lote,
+                'bloque' => $l->bloque,
+                'residencial' => $l->residencial,
+                'id_residencial' => $l->id_residencial,
+                'imagen' => $l->imagen,
+                'precio' => $l->precio,
+            ];
+        }, $lotes);
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => [
+                'more' => ($offset + $limit) < $total
+            ]
+        ]);
     }
 }

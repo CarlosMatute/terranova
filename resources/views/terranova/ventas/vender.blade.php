@@ -2,7 +2,9 @@
 
 @push('plugin-styles')
     <link href="{{ asset('assets/plugins/select2/select2.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 @endpush
 
 @section('content')
@@ -37,41 +39,38 @@
                     <h5 class="text-white mb-0"><i data-feather="search" width="16" height="16"></i> Selección de Lotes</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-4">
-                        <label class="form-label">Buscar Lote Disponible</label>
-                        <select class="form-select select2" id="sel_lote_buscador">
-                            <option value="">Buscar por bloque o nombre...</option>
-                            @foreach ($lotes_disponibles as $l)
-                                <option value="{{ $l->id }}" 
-                                    data-nombre="{{ $l->lote }}" 
-                                    data-bloque="{{ $l->bloque }}" 
-                                    data-residencial="{{ $l->residencial }}" 
-                                    data-precio="{{ $l->precio }}">
-                                    {{ $l->residencial }} - Bloque {{ $l->bloque }} - Lote {{ $l->lote }} ({{ number_format($l->precio, 2) }})
-                                </option>
-                            @endforeach
-                        </select>
-                        <button class="btn btn-azul mt-2 w-100" id="btn_agregar_lote_lista">
-                            <i data-feather="plus" width="16" height="16"></i> Agregar a la venta
-                        </button>
+                    <div class="table-responsive">
+                        <table class="jambo_table table table-hover" id="tbl_lotes_disponibles" border="1" width="100%">
+                            <thead class="bg-azul-oscuro">
+                                <tr class="headings">
+                                    <th scope="col" class="text-white">Residencial</th>
+                                    <th scope="col" class="text-white">Bloque</th>
+                                    <th scope="col" class="text-white">Lote</th>
+                                    <th scope="col" class="text-white text-end">Precio</th>
+                                    <th scope="col" class="text-white text-end">Área</th>
+                                    <th scope="col" class="text-white text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
-
+                    <hr>
+                    <h6 class="fw-semibold mb-2"><i data-feather="shopping-cart" width="16" height="16"></i> Lotes Seleccionados</h6>
                     <div class="table-responsive">
                         <table class="table table-hover" id="tbl_lotes_venta">
                             <thead class="bg-azul-oscuro text-white">
                                 <tr>
                                     <th class="text-white">Lote Seleccionado</th>
-                                    <th class="text-white">Precio</th>
-                                    <th class="text-white"></th>
+                                    <th class="text-white text-end">Precio</th>
+                                    <th class="text-white text-center"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Dinámico -->
                             </tbody>
                             <tfoot>
                                 <tr class="table-info">
                                     <th>Total Lotes:</th>
-                                    <th id="lbl_total_lotes_lista">0.00</th>
+                                    <th id="lbl_total_lotes_lista" class="text-end">0.00</th>
                                     <th></th>
                                 </tr>
                             </tfoot>
@@ -151,6 +150,9 @@
 
 @push('plugin-scripts')
     <script src="{{ asset('assets/plugins/select2/select2.min.js') }}"></script>
+    <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
+    <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
 @endpush
 
@@ -190,28 +192,57 @@
                 },
                 minimumInputLength: 1
             });
-            $('#sel_lote_buscador').select2();
-
-            $('#btn_agregar_lote_lista').on('click', function() {
-                var sel = $('#sel_lote_buscador').find(':selected');
-                var id = sel.val();
-                if (!id) return;
-
+            function imgResidencial(id_residencial, imagen) {
+                return '{{ asset("storage/residenciales/res_") }}' + (id_residencial || '') + '/' + (imagen || '');
+            }
+            var dt_lotes = $('#tbl_lotes_disponibles').DataTable({
+                "aLengthMenu": [[10, 30, 50, 100, -1], [10, 30, 50, 100, "Todo"]],
+                "iDisplayLength": 10,
+                responsive: true,
+                serverSide: true,
+                processing: true,
+                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" },
+                ajax: { url: "{{ url('/ventas/lotes-datos') }}" },
+                columns: [
+                    { data: 'residencial', render: function(d, t, r) {
+                        var src = '{{ asset("storage/residenciales/res_") }}' + r.id_residencial + '/' + (r.imagen || '');
+                        return '<div class="d-flex align-items-center gap-2">' +
+                            '<img src="' + src + '" onerror="this.src=\'{{ asset("/assets/images/homes.png") }}\'" ' +
+                            'style="width:28px;height:28px;object-fit:cover;border-radius:4px;"> ' +
+                            '<span>' + d + '</span></div>';
+                    } },
+                    { data: 'bloque', render: function(d) { return '<span class="badge bg-primary">' + d + '</span>'; } },
+                    { data: 'lote', render: function(d) { return '<span class="badge bg-primary">' + d + '</span>'; } },
+                    { data: 'precio', className: 'text-end', render: function(d) { return 'L ' + d; } },
+                    { data: 'area', className: 'text-end' },
+                    { data: null, className: 'text-center', orderable: false, searchable: false, render: function(d, t, r) {
+                        return '<button class="btn btn-success btn-xs btn-agregar-lote" data-id="' + r.id +
+                            '" data-nombre="' + r.lote + '" data-bloque="' + r.bloque +
+                            '" data-residencial="' + r.residencial + '" data-id-residencial="' + r.id_residencial +
+                            '" data-imagen="' + (r.imagen || '') + '" data-precio="' + r.precio_raw + '">' +
+                            '<i data-feather="plus" width="14" height="14"></i></button>';
+                    } }
+                ],
+                order: [[0, 'asc']],
+                drawCallback: function() { feather.replace(); }
+            });
+            $('#tbl_lotes_disponibles').on('click', '.btn-agregar-lote', function() {
+                var btn = $(this);
+                var id = btn.data('id');
                 if (lotes_seleccionados.find(l => l.id == id)) {
                     return Swal.fire('Aviso', 'El lote ya está en la lista.', 'warning');
                 }
-
                 var lote = {
                     id: id,
-                    nombre: sel.data('nombre'),
-                    bloque: sel.data('bloque'),
-                    residencial: sel.data('residencial'),
-                    precio: parseFloat(sel.data('precio'))
+                    nombre: btn.data('nombre'),
+                    bloque: btn.data('bloque'),
+                    residencial: btn.data('residencial'),
+                    id_residencial: btn.data('id-residencial'),
+                    imagen: btn.data('imagen'),
+                    precio: parseFloat(btn.data('precio'))
                 };
-
                 lotes_seleccionados.push(lote);
                 renderLista();
-                $('#sel_lote_buscador').val('').trigger('change');
             });
 
             function renderLista() {
@@ -219,10 +250,17 @@
                 total_contado = 0;
                 lotes_seleccionados.forEach((l, index) => {
                     total_contado += l.precio;
+                    var src = imgResidencial(l.id_residencial, l.imagen);
                     html += `<tr>
                         <td>
-                            <strong>${l.residencial}</strong><br>
-                            <small>Bloque ${l.bloque} - Lote ${l.nombre}</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="${src}" onerror="this.src='{{ asset("/assets/images/homes.png") }}'"
+                                     style="width:28px;height:28px;object-fit:cover;border-radius:4px;">
+                                <div>
+                                    <strong>${l.residencial}</strong><br>
+                                    <small>Bloque <span class="badge bg-primary">${l.bloque}</span> - Lote <span class="badge bg-primary">${l.nombre}</span></small>
+                                </div>
+                            </div>
                         </td>
                         <td>${l.precio.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                         <td>

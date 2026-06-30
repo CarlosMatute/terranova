@@ -39,8 +39,8 @@
                                     @php $total_lotes += $l->precio; @endphp
                                     <tr>
                                         <td>{{ $l->residencial }}</td>
-                                        <td>{{ $l->bloque }}</td>
-                                        <td>{{ $l->nombre }}</td>
+                                        <td><span class="badge bg-primary">{{ $l->bloque }}</span></td>
+                                        <td><span class="badge bg-primary">{{ $l->nombre }}</span></td>
                                         <td>{{ number_format($l->precio, 2) }}</td>
                                         <td>
                                             <button class="btn btn-danger btn-xs btn_quitar" data-id="{{ $l->id_apartado }}">Quitar</button>

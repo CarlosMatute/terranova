@@ -15,6 +15,7 @@ use App\Http\Controllers\Residenciales\ResidencialesController;
 use App\Http\Controllers\Clientes\ClientesController;
 use App\Http\Controllers\Ventas\VentasController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Estadisticas\EstadisticaController;
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -48,6 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::group(['prefix' => 'ventas'], function(){
         Route::get('/', [VentasController::class, 'ver_ventas']);
         Route::get('/datos', [VentasController::class, 'datos_ventas']);
+        Route::get('/lotes-datos', [VentasController::class, 'datos_lotes_disponibles']);
+        Route::get('/buscar-lotes', [VentasController::class, 'buscar_lotes']);
         Route::post('/guardar', [VentasController::class, 'guardar_venta']);
         Route::get('/detalle/{id}', [VentasController::class, 'ver_detalle_venta']);
         Route::post('/pagar-cuota', [VentasController::class, 'pagar_cuota']);
@@ -56,6 +59,9 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/vender', [VentasController::class, 'ver_vender']);
+
+    Route::get('/residenciales/{id_residencial}/estadisticas', [EstadisticaController::class, 'show']);
+    Route::get('/residenciales/{id_residencial}/estadisticas/datos', [EstadisticaController::class, 'datos_ventas_residencial']);
 
     Route::get('/clear-cache', function() {
         Artisan::call('cache:clear');

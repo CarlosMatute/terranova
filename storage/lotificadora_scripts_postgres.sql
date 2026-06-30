@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS public.bloques
     CONSTRAINT bloques_pkey PRIMARY KEY (id)
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bloques_nombre ON bloques (nombre);
+
 INSERT INTO bloques (nombre) VALUES
 ('A'),('B'),('C'),('D'),('E'),('F'),('G'),
 ('H'),('I'),('J'),('K'),('L'),('M'),('N'),

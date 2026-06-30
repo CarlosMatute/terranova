@@ -101,6 +101,9 @@
                                             <a href="{{ url('residenciales/' . $row->id . '/bloques') }}" class="btn btn-azul btn-xs" role="button" aria-pressed="true">
                                                 <i data-feather="square" width="16" height="16"></i> Bloques
                                             </a>
+                                            <a href="{{ url('residenciales/' . $row->id . '/estadisticas') }}" class="btn btn-success btn-xs" role="button" aria-pressed="true">
+                                                <i data-feather="bar-chart-2" width="16" height="16"></i> Estad&iacute;sticas
+                                            </a>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -429,7 +432,7 @@
                         '<thead class="bg-azul-oscuro text-white"><tr><th>Bloque</th><th>Total</th><th>Vendidos</th><th>Apartados</th></tr></thead><tbody>';
                     $.each(data.bloques, function(i, b) {
                         if (b.vendidos > 0 || b.apartados > 0) {
-                            html += '<tr><td>' + b.bloque + '</td><td>' + b.total_lotes + '</td><td><span class="badge bg-success">' + b.vendidos + '</span></td><td><span class="badge bg-warning">' + b.apartados + '</span></td></tr>';
+                            html += '<tr><td><span class="badge bg-primary">' + b.bloque + '</span></td><td>' + b.total_lotes + '</td><td><span class="badge bg-success">' + b.vendidos + '</span></td><td><span class="badge bg-warning">' + b.apartados + '</span></td></tr>';
                         }
                     });
                     html += '</tbody></table></div>';
@@ -550,6 +553,10 @@
                                     '<a href="residenciales/' + row.id + '/bloques" ' +
                                     'class="btn btn-azul btn-xs" role="button" aria-pressed="true">' +
                                         '<i data-feather="square" width="14" height="14"></i> Bloques' +
+                                    '</a> ' +
+                                    '<a href="residenciales/' + row.id + '/estadisticas" ' +
+                                    'class="btn btn-success btn-xs" role="button" aria-pressed="true">' +
+                                        '<i data-feather="bar-chart-2" width="14" height="14"></i> Estad\u00edsticas' +
                                     '</a>' +
                                 '</div>'
                             ];

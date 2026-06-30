@@ -366,7 +366,7 @@
             var triggerLink = $(e.relatedTarget);
             id = triggerLink.data("id");
             bloque = triggerLink.data("bloque");
-            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-azul">' + bloque +
+            $("#modal_eliminar_bloque_informacion").html('<h4><span class="badge bg-primary">' + bloque +
                 '</span></h4>');
         });
 

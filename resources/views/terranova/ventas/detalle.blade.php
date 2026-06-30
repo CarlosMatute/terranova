@@ -88,7 +88,7 @@
                             <div class="flex-grow-1">
                                 <a href="{{ url('/residenciales/' . $l->id_residencial . '/bloques/' . $l->id_bloque) }}" class="text-decoration-none text-dark fw-bold">{{ $l->residencial }}</a>
                                 <br>
-                                <small>Bloque {{ $l->bloque }} - Lote {{ $l->nombre }}</small>
+                                <small>Bloque <span class="badge bg-primary">{{ $l->bloque }}</span> - Lote <span class="badge bg-primary">{{ $l->nombre }}</span></small>
                             </div>
                             <div class="text-end text-azul fw-bold" style="font-size: 0.85rem;">L. {{ number_format($l->precio, 2) }}</div>
                         </div>

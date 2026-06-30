@@ -25,9 +25,11 @@ DB_PASSWORD=Garrobo1995
 ```
 app/Http/Controllers/
   AuthController.php           -- Login/logout
-  DashboardController.php      -- Estadísticas del dashboard
+  DashboardController.php      -- Estadísticas del dashboard global
   Clientes/
     ClientesController.php     -- CRUD clientes + datatables + perfil
+  Estadisticas/
+    EstadisticaController.php  -- Estadísticas por residencial (30/06/2026)
   Residenciales/
     ResidencialesController.php -- CRUD residenciales, bloques, lotes
   Ventas/
@@ -55,6 +57,9 @@ resources/views/
       vender.blade.php          -- Procesar nueva venta (select2 con AJAX)
       detalle.blade.php         -- Detalle de venta + plan de pagos DataTable
       carrito.blade.php         -- Componente carrito (selección de lotes)
+    estadisticas/
+      estadistica.blade.php     -- Overview de todos los residenciales con stats
+      detalle.blade.php         -- Estadísticas detalladas por residencial
 
 storage/
   lotificadora_scripts_postgres.sql   -- Esquema completo de base de datos
@@ -144,6 +149,7 @@ Reemplazos realizados sobre el CSS original de NobleUI:
 - Sidebar header: fondo blanco, texto negro
 - Sidebar body: fondo azul, links blancos
 - Hover/active: fondo blanco, texto azul
+- Items: Inicio, Residenciales, Clientes, Ventas, **Estadísticas**, Vender
 
 ### Login (login.blade.php)
 - Mismo split TERRA/NOVA con ND LOGOS REGULAR
@@ -205,6 +211,11 @@ Reemplazos realizados sobre el CSS original de NobleUI:
 | Método | Ruta | Controlador |
 |--------|------|-------------|
 | GET | `/vender` | VentasController@ver_vender |
+
+### Estadísticas (30/06/2026)
+| Método | Ruta | Controlador | Propósito |
+|--------|------|-------------|-----------|
+| GET | `/residenciales/{id_residencial}/estadisticas` | EstadisticaController@show | Estadísticas detalladas por residencial |
 
 ### Catch-all (404)
 ```php
@@ -302,14 +313,18 @@ Cada usuario ve solo sus propios datos (clientes, residenciales, etc).
 
 ## Datos de Prueba (`storage/test_data.sql`)
 Script PostgreSQL que genera ~150,000 registros:
-- 6 usuarios (admin + op1-op5, password: `password`)
-- 60 residenciales, 300 bloques, 30,000 lotes
-- 5,000 clientes, 15,000 referencias, 10,000 beneficiarios
-- 5,000 ventas (2,500 contado + 2,500 crédito), 5,000 lotes_vendidos
-- 500 lotes reservados, 500 lotes apartados
-- ~60,000 fechas_cobros
-- Datos distribuidos entre usuarios con `ID_USER = 1 + (id % 6)`
-- Idempotente: usa `WHERE NOT EXISTS` en todas las inserciones
+- **6 usuarios** (admin + op1-op5, todos con password `password`)
+- **62 residenciales**, **26 bloques** (A-Z con UNIQUE INDEX), **310 bloques_residenciales** (5 por residencial)
+- **31,000 lotes** (100 por bloque, nombres únicos: `L-{RESID_ID}-{BLOQUE}-{NUM}`)
+- **6,000 clientes** (1,000 por usuario en bloques contiguos)
+- **18,000 referencias** (3 por cliente), **12,000 beneficiarios** (2 por cliente)
+- **3,100 ventas** (50 por residencial: 25 Contado/Pagado + 25 Crédito/Activo)
+- **3,100 lotes_vendidos** (FK consistentes: mismo ID_USER que el residencial)
+- **55,800 fechas_cobros** (primeras 6 cuotas pagadas, resto pendientes + atrasos)
+- **500 lotes reservados** (FK a CLIENTE del mismo ID_USER que el residencial)
+- **500 lotes apartados**
+- **FK consistentes**: CLIENTES agrupados por usuario (`(i-1)/1000 + 1`), VENTAS usan CLIENTES del mismo usuario que el RESIDENCIAL
+- **Idempotente**: usa `WHERE NOT EXISTS` + `ON CONFLICT DO NOTHING`
 
 ---
 
@@ -345,6 +360,39 @@ Script PostgreSQL que genera ~150,000 registros:
 - Agregada gráfica lineal (Chart.js) de Ingresos vs Cobros últimos 12 meses (`dashboard.blade.php`)
 - Datos mensuales desde `FECHAS_COBROS` agrupados por mes en `DashboardController`
 - Dashboard estilizado con headers gradiente azul institucional y colores Insignia
+
+### Módulo de Estadísticas por Residencial (30/06/2026)
+- `Estadisticas/EstadisticaController.php`: Nuevo controlador con 6 queries por residencial:
+  - `show($id)` — detalle completo de un residencial con métricas profesionales
+  - `getResidencialMonthlyStats()` — esperado vs cobrado del mes, restante, % efectividad
+  - `getResidencialTodayStats()` — cobros del día para el residencial
+  - `getResidencialOverdueStats()` — atrasados del residencial
+  - `getResidencialVentas()` — lista completa de ventas con cliente, lotes, total, cobrado, % progreso, acción "Ver"
+  - `getResidencialChartData()` — últimos 12 meses de ingresos para gráfica
+- NOTA: Contado/Pagado muestra TOTAL_COBRADO = TOTAL_PAGAR y PORCENTAJE = 100% (no usa FECHAS_COBROS)
+- Vista `detalle.blade.php`: Breadcrumb `Residenciales > Estadísticas`, header con foto del residencial, 4 stat cards (cobros hoy, atrasados, eficiencia, por cobrar), resumen del residencial, barra de progreso mensual, gráfica Chart.js (línea 12 meses + dona cobrado/pendiente), tabla completa de ventas con columnas: #Cliente, Identidad, Lotes, Tipo, Estado, Total, Cobrado, % badge, barra de progreso, acción Ver
+- Ruta: `GET /residenciales/{id_residencial}/estadisticas`
+- Acceso: botón "Estadísticas" en la tabla de Residenciales (verde, icono `bar-chart-2`)
+- Multi-tenant: basado en `RESIDENCIALES.ID_USER` (la residencial verifica pertenencia al usuario autenticado, no filtra por CLIENTES.ID_USER)
+
+### Dashboard Redesign Profesional (30/06/2026)
+- `DashboardController.php`: Reescrito con 7 queries de métricas profesionales multi-tenant:
+  - `getMonthlyStats()` — esperado vs cobrado, restante, % efectividad
+  - `getTodayStats()` — cobros del día (cantidad + monto)
+  - `getOverdueStats()` — atrasados totales (cuentas vencidas sin pago)
+  - `getUpcomingPayments()` — próximos 7 días (fecha formateada + cliente)
+  - `getTopMorosos()` — top 5 morosos con ranking por cuotas atrasadas y adeudo
+  - `getChartData()` — últimos 12 meses para gráfica de tendencia
+  - `getConteos()` — lotes disponibles, clientes, ventas activas, ventas completadas
+- `dashboard.blade.php`: Rediseño profesional con:
+  - Header gradient con badges de resumen (lotes disp, clientes, activas)
+  - 4 stat cards: Cobros del día, Atrasados, Eficiencia %, Por Cobrar
+  - Barra de progreso mensual con meta vs recaudado + indicador de efectividad
+  - Gráfica lineal (Chart.js) — tendencia ingresos vs cobros 12 meses
+  - Dona (Chart.js) — distribución cobrado/pendiente con tooltips porcentuales
+  - Tabla próximos cobros (7 días) con indicador de vencimiento
+  - Tabla top morosos con badge de cuotas atrasadas y fecha más antigua
+  - Estados vacíos con iconos Feather para tablas sin datos
 
 ### Sidebar
 - Reducido `font-size` del texto TERRANOVA en sidebar (`master.blade.php` inline style)
@@ -398,8 +446,9 @@ Script PostgreSQL que genera ~150,000 registros:
 ### Fix #2 — Update de bloques (accion == 2)
 - `ResidencialesController.php@371-388`: Implementado UPDATE real que persiste cambios de precio, área, colindancias y financiamiento en todos los lotes del bloque.
 
-### Fix #3 — Dashboard multi-tenant
-- `DashboardController.php`: Todas las queries ahora filtran por `ID_USER` mediante subquery `ID_CLIENTE IN (SELECT ID FROM CLIENTES WHERE ID_USER = :id_user)`. Cada usuario ve solo sus propios datos.
+### Fix #3 — Dashboard multi-tenant + Rediseño profesional
+- `DashboardController.php`: 7 queries con métricas profesionales. Todas filtran por `ID_USER` mediante JOIN a CLIENTES. Cada usuario ve solo sus propios datos.
+- `dashboard.blade.php`: Rediseño completo con cards, gráficas Chart.js (línea + dona), tabla de próximos cobros y top morosos.
 
 ### Fix #4 — Validación server-side
 - `VentasController.guardar_venta()`: `$request->validate()` con reglas para todos los campos: required, tipos, rangos (anios 0-50, tasa 0-100, cuotas 0-600, dia_cobro 1-28, lotes array min:1).
@@ -422,7 +471,7 @@ Script PostgreSQL que genera ~150,000 registros:
 | 2 | **Alto** | `ResidencialesController.php:298-300` | ✅ Resuelto: `accion == 2` ahora ejecuta UPDATE de precio, área, colindancias y financiamiento en todos los lotes del bloque. |
 | 3 | **Alto** | Todos los controllers | Cero validación server-side (`$request->validate()`). Toda la validación es JS del lado cliente. (✅ Parcial: `VentasController.guardar_venta` y `ClientesController.guardar_cliente` ahora tienen validate()) |
 | 4 | **Alto** | `ResidencialesController`, `ClientesController` | Updates/deletes no verifican `ID_USER`. Cualquier usuario autenticado puede modificar/eliminar datos de otros. (✅ Parcial: `VentasController.guardar_venta` ya verifica pertenencia del cliente) |
-| 5 | **Alto** | `DashboardController.php:14-54` | ✅ Resuelto: Dashboard ahora filtra ventas por `ID_USER` mediante subquery a CLIENTES. Cada usuario ve solo sus propios datos. |
+| 5 | **Alto** | `DashboardController.php` | ✅ Resuelto + Rediseño: Dashboard con 7 queries multi-tenant y vista profesional con cards, gráficas Chart.js (línea + dona), próximos cobros y top morosos (30/06). |
 | 6 | **Alto** | `ClientesController.php:287-338` | SQL dinámico concatenado (`$where`) sin prepared statements completos. |
 | 7 | **Medio** | Todos los controllers | `$e->getMessage()` expuesto al frontend — filtra detalles internos (tablas, constraints, etc.). |
 | 8 | **Medio** | `ResidencialesController.php:115` | `Storage::delete()` con nombre de imagen del usuario sin sanitizar (path traversal). |
@@ -475,7 +524,7 @@ Script PostgreSQL que genera ~150,000 registros:
 
 | # | Mejora | Descripción |
 |---|--------|-------------|
-| 43 | Dashboard sin filtro por usuario | Muestra datos globales, no del usuario autenticado. |
+| 43 | ✅ Dashboard con filtro multi-tenant + métricas profesionales | Resuelto: DashboardController con 7 queries multi-tenant + vista rediseñada con cards, gráficas y tablas. |
 | 44 | Sin exportación PDF/Excel | No hay botón para exportar clientes, ventas o reportes. |
 | 45 | Sin notificaciones de cobro | No alerta sobre fechas de cobro próximas o vencidas. |
 | 46 | Sin historial de pagos completo | Solo se ve el estado actual, no el histórico de movimientos. |
@@ -499,13 +548,13 @@ Script PostgreSQL que genera ~150,000 registros:
 ## Plan de Acción Sugerido
 
 ### Fase 1 — Inmediata (Semana 1-2)
-1. Corregir `ID_RESIDENCIAL = 1` hardcodeado → usar `$id_residencial`
-2. Implementar update real de bloques (`accion == 2`)
-3. Agregar `$request->validate()` a todos los controllers
-4. Agregar `AND ID_USER = :id_user` en todos los updates/deletes
-5. Filtrar dashboard por `Auth::id()`
-6. Reemplazar `$e->getMessage()` por logging + mensaje genérico
-7. Sanitizar paths en `Storage::delete()`
+1. ~~Corregir `ID_RESIDENCIAL = 1` hardcodeado~~ → Auditado: no hay hardcode (✅)
+2. ~~Implementar update real de bloques (`accion == 2`)~~ ✅ Resuelto (29/06)
+3. ~~Agregar `$request->validate()`~~ ✅ Resuelto en `guardar_venta` y `guardar_cliente` (29/06)
+4. ~~Agregar `AND ID_USER = :id_user`~~ ✅ Resuelto en dashboard + guardar_venta (29/06)
+5. ~~Filtrar dashboard por `Auth::id()`~~ ✅ Resuelto + rediseño profesional (30/06)
+6. Reemplazar `$e->getMessage()` por logging + mensaje genérico *(pendiente)*
+7. Sanitizar paths en `Storage::delete()` *(pendiente)*
 
 ### Fase 2 — Corto plazo (Mes 1-2)
 8. Crear migraciones para todas las tablas

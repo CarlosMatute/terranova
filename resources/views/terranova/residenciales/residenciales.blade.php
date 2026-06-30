@@ -4,7 +4,7 @@
     <link href="{{ asset('assets/plugins/cropperjs/cropper.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/plugins/datatables-net/responsive/responsive.dataTables.min.css') }}">
     <style>
         .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
     </style>
@@ -256,7 +256,7 @@
     <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="{{ asset('assets/plugins/datatables-net/responsive/dataTables.responsive.min.js') }}"></script>
     <script src="{{ asset('assets/js/alertas_propias.js') }}"></script>
 @endpush
 

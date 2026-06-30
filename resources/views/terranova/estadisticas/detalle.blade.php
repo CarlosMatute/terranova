@@ -2,7 +2,7 @@
 
 @push('plugin-styles')
 <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+<link rel="stylesheet" href="{{ asset('assets/plugins/datatables-net/responsive/responsive.dataTables.min.css') }}">
 <style>
 .stat-card { transition: transform 0.2s, box-shadow 0.2s; cursor: default; border-radius: 12px; overflow: hidden; }
 .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(63,89,129,0.15) !important; }
@@ -287,7 +287,7 @@
 <script src="{{ asset('assets/plugins/chartjs/chart.umd.js') }}"></script>
 <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
 <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="{{ asset('assets/plugins/datatables-net/responsive/dataTables.responsive.min.js') }}"></script>
 @endpush
 
 @push('custom-scripts')
@@ -411,7 +411,7 @@ $(function() {
         serverSide: true,
         processing: true,
         language: {
-            url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+            url: "{{ asset('assets/plugins/datatables-net/i18n/Spanish.json') }}"
         },
         ajax: {
             url: '{{ url('/residenciales/' . $residencial->id . '/estadisticas/datos') }}',

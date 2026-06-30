@@ -49,8 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::group(['prefix' => 'ventas'], function(){
         Route::get('/', [VentasController::class, 'ver_ventas']);
         Route::get('/datos', [VentasController::class, 'datos_ventas']);
-        Route::get('/lotes-datos', [VentasController::class, 'datos_lotes_disponibles']);
-        Route::get('/buscar-lotes', [VentasController::class, 'buscar_lotes']);
+        Route::get('/bloques-por-residencial/{id_residencial}', [VentasController::class, 'bloques_por_residencial']);
+        Route::get('/lotes-por-br/{id_br}', [VentasController::class, 'lotes_por_br']);
         Route::post('/guardar', [VentasController::class, 'guardar_venta']);
         Route::get('/detalle/{id}', [VentasController::class, 'ver_detalle_venta']);
         Route::post('/pagar-cuota', [VentasController::class, 'pagar_cuota']);

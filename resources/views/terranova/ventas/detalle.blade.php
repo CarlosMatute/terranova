@@ -203,7 +203,7 @@
     <script>
         $(document).ready(function() {
             $('#tbl_plan_pagos').DataTable({
-                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" }
+                language: { url: "{{ asset('assets/plugins/datatables-net/i18n/Spanish.json') }}" }
             });
             actualizarBalance();
             actualizarBotones();

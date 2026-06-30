@@ -4,7 +4,7 @@
     <link href="{{ asset('assets/plugins/cropperjs/cropper.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/plugins/datatables-net/responsive/responsive.dataTables.min.css') }}">
     <style>
         .nav-tabs .nav-link.active { border-bottom-color: var(--ins-azul) !important; color: var(--ins-azul) !important; }
         .nav-tabs .nav-link:hover { border-bottom-color: var(--ins-azul-claro) !important; }
@@ -381,7 +381,7 @@
                     }
                 ],
                 order: [[2, 'asc']],
-                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" },
+                language: { url: "{{ asset('assets/plugins/datatables-net/i18n/Spanish.json') }}" },
                 drawCallback: function() {
                     feather.replace();
                 }

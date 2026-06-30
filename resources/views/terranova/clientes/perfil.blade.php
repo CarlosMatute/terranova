@@ -235,7 +235,7 @@
             }
             if ($('#tbl_ventas tbody tr').length > 0) {
                 $('#tbl_ventas').DataTable({
-                    language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" },
+                    language: { url: "{{ asset('assets/plugins/datatables-net/i18n/Spanish.json') }}" },
                     pageLength: 5,
                     lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]]
                 });

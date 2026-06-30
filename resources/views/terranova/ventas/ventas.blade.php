@@ -2,7 +2,7 @@
 
 @push('plugin-styles')
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/plugins/datatables-net/responsive/responsive.dataTables.min.css') }}">
     <style>
         .table thead.bg-azul-oscuro th { font-weight: 500; font-size: 0.85rem; }
     </style>
@@ -89,14 +89,14 @@
 @push('plugin-scripts')
     <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="{{ asset('assets/plugins/datatables-net/responsive/dataTables.responsive.min.js') }}"></script>
 @endpush
 
 @push('custom-scripts')
     <script>
         var ventasDT = {};
         $(document).ready(function() {
-            var lang = { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" };
+            var lang = { url: "{{ asset('assets/plugins/datatables-net/i18n/Spanish.json') }}" };
             var cols = [
                 { data: 'id' },
                 { data: 'fecha_venta' },

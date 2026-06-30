@@ -4,7 +4,6 @@
     <link href="{{ asset('assets/plugins/select2/select2.min.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.css') }}" rel="stylesheet" />
     <link href="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.css') }}" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 @endpush
 
 @section('content')
@@ -39,21 +38,42 @@
                     <h5 class="text-white mb-0"><i data-feather="search" width="16" height="16"></i> Selección de Lotes</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="jambo_table table table-hover" id="tbl_lotes_disponibles" border="1" width="100%">
-                            <thead class="bg-azul-oscuro">
-                                <tr class="headings">
-                                    <th scope="col" class="text-white">Residencial</th>
-                                    <th scope="col" class="text-white">Bloque</th>
-                                    <th scope="col" class="text-white">Lote</th>
-                                    <th scope="col" class="text-white text-end">Precio</th>
-                                    <th scope="col" class="text-white text-end">Área</th>
-                                    <th scope="col" class="text-white text-center">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Residencial</label>
+                            <select class="form-select" id="sel_residencial">
+                                <option value="">Seleccione un residencial...</option>
+                                @foreach($residenciales as $r)
+                                <option value="{{ $r->id }}" data-imagen="{{ $r->imagen }}">{{ $r->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Bloque</label>
+                            <select class="form-select" id="sel_bloque" disabled>
+                                <option value="">Primero seleccione un residencial...</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <div id="lotes_container" style="display:none;">
+                        <hr>
+                        <h6 class="fw-semibold mb-2"><i data-feather="grid" width="16" height="16"></i> Lotes Disponibles</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="tbl_lotes_disponibles">
+                                <thead class="bg-azul-oscuro text-white">
+                                    <tr>
+                                        <th class="text-white">Lote</th>
+                                        <th class="text-white text-end">Precio</th>
+                                        <th class="text-white text-end">Área</th>
+                                        <th class="text-white text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <hr>
                     <h6 class="fw-semibold mb-2"><i data-feather="shopping-cart" width="16" height="16"></i> Lotes Seleccionados</h6>
                     <div class="table-responsive">
@@ -152,7 +172,6 @@
     <script src="{{ asset('assets/plugins/select2/select2.min.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net/jquery.dataTables.js') }}"></script>
     <script src="{{ asset('assets/plugins/datatables-net-bs5/dataTables.bootstrap5.js') }}"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="{{ asset('assets/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
 @endpush
 
@@ -192,83 +211,122 @@
                 },
                 minimumInputLength: 1
             });
+
             function imgResidencial(id_residencial, imagen) {
                 return '{{ asset("storage/residenciales/res_") }}' + (id_residencial || '') + '/' + (imagen || '');
             }
-            var dt_lotes = $('#tbl_lotes_disponibles').DataTable({
-                "aLengthMenu": [[10, 30, 50, 100, -1], [10, 30, 50, 100, "Todo"]],
-                "iDisplayLength": 10,
-                responsive: true,
-                serverSide: true,
-                processing: true,
-                language: { url: "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json" },
-                ajax: { url: "{{ url('/ventas/lotes-datos') }}" },
-                columns: [
-                    { data: 'residencial', render: function(d, t, r) {
-                        var src = '{{ asset("storage/residenciales/res_") }}' + r.id_residencial + '/' + (r.imagen || '');
-                        return '<div class="d-flex align-items-center gap-2">' +
-                            '<img src="' + src + '" onerror="this.src=\'{{ asset("/assets/images/homes.png") }}\'" ' +
-                            'style="width:28px;height:28px;object-fit:cover;border-radius:4px;"> ' +
-                            '<span>' + d + '</span></div>';
-                    } },
-                    { data: 'bloque', render: function(d) { return '<span class="badge bg-primary">' + d + '</span>'; } },
-                    { data: 'lote', render: function(d) { return '<span class="badge bg-primary">' + d + '</span>'; } },
-                    { data: 'precio', className: 'text-end', render: function(d) { return 'L ' + d; } },
-                    { data: 'area', className: 'text-end' },
-                    { data: null, className: 'text-center', orderable: false, searchable: false, render: function(d, t, r) {
-                        return '<button class="btn btn-success btn-xs btn-agregar-lote" data-id="' + r.id +
-                            '" data-nombre="' + r.lote + '" data-bloque="' + r.bloque +
-                            '" data-residencial="' + r.residencial + '" data-id-residencial="' + r.id_residencial +
-                            '" data-imagen="' + (r.imagen || '') + '" data-precio="' + r.precio_raw + '">' +
-                            '<i data-feather="plus" width="14" height="14"></i></button>';
-                    } }
-                ],
-                order: [[0, 'asc']],
-                drawCallback: function() { feather.replace(); }
+
+            $('#sel_residencial').select2({
+                templateResult: function(opt) {
+                    if (!opt.id) return opt.text;
+                    var img = $(opt.element).data('imagen');
+                    var src = imgResidencial(opt.id, img);
+                    return $('<div class="d-flex align-items-center gap-2">' +
+                        '<img src="' + src + '" onerror="this.src=\'{{ asset("/assets/images/homes.png") }}\'" ' +
+                        'style="width:24px;height:24px;object-fit:cover;border-radius:3px;"> ' +
+                        '<span>' + opt.text + '</span></div>');
+                },
+                templateSelection: function(opt) {
+                    if (!opt.id) return opt.text;
+                    var img = $(opt.element).data('imagen');
+                    var src = imgResidencial(opt.id, img);
+                    return $('<div class="d-flex align-items-center gap-1">' +
+                        '<img src="' + src + '" onerror="this.src=\'{{ asset("/assets/images/homes.png") }}\'" ' +
+                        'style="width:20px;height:20px;object-fit:cover;border-radius:3px;"> ' +
+                        '<span>' + opt.text + '</span></div>');
+                },
+                escapeMarkup: function(m) { return m; }
             });
+
+            $('#sel_residencial').on('change', function() {
+                var id = $(this).val();
+                $('#sel_bloque').val('').prop('disabled', true).html('<option value="">Cargando bloques...</option>');
+                $('#lotes_container').hide().find('tbody').empty();
+                if (!id) {
+                    $('#sel_bloque').html('<option value="">Primero seleccione un residencial...</option>');
+                    return;
+                }
+                $.getJSON('{{ url("/ventas/bloques-por-residencial") }}/' + id, function(data) {
+                    var html = '<option value="">Seleccione un bloque...</option>';
+                    $.each(data, function(i, b) {
+                        html += '<option value="' + b.id + '">' + b.nombre + '</option>';
+                    });
+                    $('#sel_bloque').html(html).prop('disabled', false);
+                });
+            });
+
+            $('#sel_bloque').on('change', function() {
+                var id = $(this).val();
+                $('#lotes_container').hide();
+                if (window.dt_lotes) { window.dt_lotes.destroy(); window.dt_lotes = null; }
+                $('#tbl_lotes_disponibles tbody').empty();
+                if (!id) return;
+                $.getJSON('{{ url("/ventas/lotes-por-br") }}/' + id, function(data) {
+                    if (!data.length) {
+                        $('#lotes_container').show();
+                        $('#tbl_lotes_disponibles tbody').html('<tr><td colspan="4" class="text-center text-muted">No hay lotes disponibles en este bloque.</td></tr>');
+                        return;
+                    }
+                    var html = '';
+                    $.each(data, function(i, l) {
+                        if (lotes_seleccionados.find(function(s) { return s.id == l.id; })) return;
+                        html += '<tr>' +
+                            '<td><span class="badge bg-primary">' + l.nombre + '</span></td>' +
+                            '<td class="text-end">L ' + parseFloat(l.precio).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                            '<td class="text-end">' + l.area + '</td>' +
+                            '<td class="text-center"><button class="btn btn-success btn-xs btn-agregar-lote" data-id="' + l.id + '" data-nombre="' + l.nombre + '" data-precio="' + l.precio + '"><i data-feather="plus" width="14" height="14"></i></button></td>' +
+                            '</tr>';
+                    });
+                    $('#tbl_lotes_disponibles tbody').html(html);
+                    window.dt_lotes = $('#tbl_lotes_disponibles').DataTable({
+                        language: { url: "{{ asset('assets/plugins/datatables-net/i18n/Spanish.json') }}" },
+                        pageLength: 10,
+                        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todo"]],
+                        columns: [
+                            null, null, null,
+                            { orderable: false, searchable: false }
+                        ]
+                    });
+                    $('#lotes_container').show();
+                    feather.replace();
+                });
+            });
+
             $('#tbl_lotes_disponibles').on('click', '.btn-agregar-lote', function() {
                 var btn = $(this);
                 var id = btn.data('id');
-                if (lotes_seleccionados.find(l => l.id == id)) {
-                    return Swal.fire('Aviso', 'El lote ya está en la lista.', 'warning');
-                }
-                var lote = {
+                if (lotes_seleccionados.find(l => l.id == id)) return;
+                var id_br = $('#sel_bloque').val();
+                var id_res = $('#sel_residencial').val();
+                var resNombre = $('#sel_residencial option:selected').text();
+                var resImagen = $('#sel_residencial option:selected').data('imagen');
+                var bloqueNombre = $('#sel_bloque option:selected').text();
+                lotes_seleccionados.push({
                     id: id,
                     nombre: btn.data('nombre'),
-                    bloque: btn.data('bloque'),
-                    residencial: btn.data('residencial'),
-                    id_residencial: btn.data('id-residencial'),
-                    imagen: btn.data('imagen'),
+                    bloque: bloqueNombre,
+                    residencial: resNombre,
+                    id_residencial: id_res,
+                    imagen: resImagen,
                     precio: parseFloat(btn.data('precio'))
-                };
-                lotes_seleccionados.push(lote);
+                });
                 renderLista();
+                if (window.dt_lotes) window.dt_lotes.row(btn.closest('tr')).remove().draw();
             });
 
             function renderLista() {
                 var html = '';
                 total_contado = 0;
-                lotes_seleccionados.forEach((l, index) => {
+                lotes_seleccionados.forEach(function(l, index) {
                     total_contado += l.precio;
                     var src = imgResidencial(l.id_residencial, l.imagen);
-                    html += `<tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="${src}" onerror="this.src='{{ asset("/assets/images/homes.png") }}'"
-                                     style="width:28px;height:28px;object-fit:cover;border-radius:4px;">
-                                <div>
-                                    <strong>${l.residencial}</strong><br>
-                                    <small>Bloque <span class="badge bg-primary">${l.bloque}</span> - Lote <span class="badge bg-primary">${l.nombre}</span></small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>${l.precio.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td>
-                            <button class="btn btn-link text-danger p-0" onclick="quitarLote(${index})">
-                                <i data-feather="x" width="16" height="16"></i>
-                            </button>
-                        </td>
-                    </tr>`;
+                    html += '<tr>' +
+                        '<td><div class="d-flex align-items-center gap-2">' +
+                        '<img src="' + src + '" onerror="this.src=\'{{ asset("/assets/images/homes.png") }}\'" style="width:28px;height:28px;object-fit:cover;border-radius:4px;">' +
+                        '<div><strong>' + l.residencial + '</strong><br><small>Bloque <span class="badge bg-primary">' + l.bloque + '</span> - Lote <span class="badge bg-primary">' + l.nombre + '</span></small></div></div></td>' +
+                        '<td class="text-end">' + l.precio.toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                        '<td class="text-center"><button class="btn btn-link text-danger p-0" onclick="quitarLote(' + index + ')"><i data-feather="x" width="16" height="16"></i></button></td>' +
+                        '</tr>';
                 });
                 $('#tbl_lotes_venta tbody').html(html);
                 $('#lbl_total_lotes_lista').text(total_contado.toLocaleString('en-US', {minimumFractionDigits: 2}));
@@ -277,8 +335,27 @@
             }
 
             window.quitarLote = function(index) {
+                var lote = lotes_seleccionados[index];
                 lotes_seleccionados.splice(index, 1);
                 renderLista();
+                if ($('#sel_bloque').val()) {
+                    var id_br = $('#sel_bloque').val();
+                    $.getJSON('{{ url("/ventas/lotes-por-br") }}/' + id_br, function(data) {
+                        var match = data.find(function(l) { return l.id == lote.id; });
+                        if (match) {
+                            var row = '<tr><td><span class="badge bg-primary">' + match.nombre + '</span></td>' +
+                                '<td class="text-end">L ' + parseFloat(match.precio).toLocaleString('en-US', {minimumFractionDigits: 2}) + '</td>' +
+                                '<td class="text-end">' + match.area + '</td>' +
+                                '<td class="text-center"><button class="btn btn-success btn-xs btn-agregar-lote" data-id="' + match.id + '" data-nombre="' + match.nombre + '" data-precio="' + match.precio + '"><i data-feather="plus" width="14" height="14"></i></button></td></tr>';
+                            if (window.dt_lotes) {
+                                window.dt_lotes.row.add($(row)[0]).draw();
+                            } else {
+                                $('#tbl_lotes_disponibles tbody').append(row);
+                            }
+                            feather.replace();
+                        }
+                    });
+                }
             };
 
             $('#tipo_pago').on('change', function() {
@@ -357,7 +434,7 @@
                     data: data,
                     success: function(res) {
                         if (res.msgError) Swal.fire('Error', res.msgError, 'error');
-                        else Swal.fire('Éxito', res.msgSuccess, 'success').then(() => location.href = "{{ url('/ventas') }}");
+                        else Swal.fire('Éxito', res.msgSuccess, 'success').then(function() { location.href = "{{ url('/ventas') }}"; });
                     }
                 });
             });

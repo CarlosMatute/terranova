@@ -24,6 +24,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', [DashboardController::class, 'index']);
+    Route::get('/dashboard/calendario', [DashboardController::class, 'calendario_ajax']);
+    Route::get('/dashboard/calendario/dia', [DashboardController::class, 'detalle_dia_ajax']);
 
     Route::group(['prefix' => 'residenciales'], function(){
         Route::get('/', [ResidencialesController::class, 'ver_residenciales']);

@@ -20,7 +20,9 @@ class DashboardController extends Controller
         $chart_data = $this->getChartData($id_user);
         $conteos = $this->getConteos($id_user);
 
-        return view('dashboard')
+        $calendario = $this->getCalendario($id_user, date('n'), date('Y'));
+
+        return view('dashboard')->with('calendario', $calendario)
             ->with('stats', $stats)
             ->with('hoy', $hoy)
             ->with('atrasados', $atrasados)
@@ -208,5 +210,159 @@ class DashboardController extends Controller
             'ventas_activas' => $ventas_activas->total,
             'ventas_completadas' => $ventas_completadas->total,
         ];
+    }
+
+    private function getCalendario($id_user, $month, $year)
+    {
+        $start = "{$year}-{$month}-01";
+        $end = date('Y-m-t', strtotime($start));
+
+        $rows = DB::select("
+            SELECT
+                FC.FECHA_COBRO,
+                COUNT(*) AS TOTAL_CUOTAS,
+                COALESCE(SUM(CASE WHEN FC.FECHA_PAGO IS NOT NULL THEN 1 ELSE 0 END), 0) AS COBRADAS,
+                COALESCE(SUM(CASE WHEN FC.FECHA_PAGO IS NULL AND FC.FECHA_COBRO < CURRENT_DATE THEN 1 ELSE 0 END), 0) AS ATRASADAS,
+                COALESCE(SUM(CASE WHEN FC.FECHA_PAGO IS NULL AND FC.FECHA_COBRO >= CURRENT_DATE THEN 1 ELSE 0 END), 0) AS PENDIENTES,
+                COALESCE(SUM(CASE WHEN FC.FECHA_PAGO IS NOT NULL THEN FC.CANTIDAD_PAGO ELSE 0 END), 0) AS TOTAL_COBRADO,
+                COALESCE(SUM(CASE WHEN FC.FECHA_PAGO IS NULL THEN V.CUOTA_MENSUAL ELSE 0 END), 0) AS TOTAL_PENDIENTE
+            FROM FECHAS_COBROS FC
+            JOIN VENTAS V ON FC.ID_VENTA = V.ID
+            JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            WHERE FC.FECHA_COBRO BETWEEN :start AND :end
+              AND V.DELETED_AT IS NULL
+              AND C.ID_USER = :id_user
+            GROUP BY FC.FECHA_COBRO
+            ORDER BY FC.FECHA_COBRO
+        ", ['start' => $start, 'end' => $end, 'id_user' => $id_user]);
+
+        $dias = [];
+        $numDays = date('t', strtotime($start));
+        for ($d = 1; $d <= $numDays; $d++) {
+            $date = "{$year}-{$month}-" . str_pad($d, 2, '0', STR_PAD_LEFT);
+            $dias[$date] = [
+                'total' => 0, 'cobradas' => 0, 'atrasadas' => 0,
+                'pendientes' => 0, 'total_cobrado' => 0, 'total_pendiente' => 0
+            ];
+        }
+        foreach ($rows as $r) {
+            $dias[$r->fecha_cobro] = [
+                'total' => (int)$r->total_cuotas,
+                'cobradas' => (int)$r->cobradas,
+                'atrasadas' => (int)$r->atrasadas,
+                'pendientes' => (int)$r->pendientes,
+                'total_cobrado' => (float)$r->total_cobrado,
+                'total_pendiente' => (float)$r->total_pendiente,
+            ];
+        }
+
+        return (object)[
+            'year' => (int)$year,
+            'month' => (int)$month,
+            'month_name' => date('F', strtotime($start)),
+            'num_days' => $numDays,
+            'start_day' => (int)date('N', strtotime($start)),
+            'dias' => $dias,
+        ];
+    }
+
+    public function calendario_ajax(Request $request)
+    {
+        $id_user = Auth::id();
+        $month = (int)$request->input('month', date('n'));
+        $year = (int)$request->input('year', date('Y'));
+        $data = $this->getCalendario($id_user, $month, $year);
+        return response()->json($data);
+    }
+
+    public function detalle_dia_ajax(Request $request)
+    {
+        $id_user = Auth::id();
+        $date = $request->input('date');
+
+        $rows = DB::select("
+            SELECT
+                V.ID AS ID_VENTA,
+                V.CUOTA_MENSUAL,
+                V.TOTAL_PAGAR,
+                FC.ID AS ID_CUOTA,
+                FC.FECHA_COBRO,
+                FC.FECHA_PAGO,
+                FC.CANTIDAD_PAGO,
+                TRIM(
+                    COALESCE(TRIM(C.PRIMER_NOMBRE) || ' ', '') ||
+                    COALESCE(TRIM(C.SEGUNDO_NOMBRE) || ' ', '') ||
+                    COALESCE(TRIM(C.PRIMER_APELLIDO) || ' ', '') ||
+                    COALESCE(TRIM(C.SEGUNDO_APELLIDO), '')
+                ) AS CLIENTE,
+                C.CONTACTO_TELEFONICO,
+                C.CONTACTO_TELEFONICO_2,
+                R.NOMBRE AS RESIDENCIAL,
+                B.NOMBRE AS BLOQUE,
+                L.NOMBRE AS LOTE
+            FROM FECHAS_COBROS FC
+            JOIN VENTAS V ON FC.ID_VENTA = V.ID
+            JOIN CLIENTES C ON V.ID_CLIENTE = C.ID
+            JOIN LOTES_VENDIDOS LV ON LV.ID_VENTA = V.ID AND LV.DELETED_AT IS NULL
+            JOIN LOTES L ON LV.ID_LOTE = L.ID
+            JOIN BLOQUES_RESIDENCIALES BR ON L.ID_BLOQUE_RESIDENCIAL = BR.ID
+            JOIN BLOQUES B ON BR.ID_BLOQUE = B.ID
+            JOIN RESIDENCIALES R ON BR.ID_RESIDENCIAL = R.ID
+            WHERE FC.FECHA_COBRO = :fecha
+              AND V.DELETED_AT IS NULL
+              AND C.ID_USER = :id_user
+            ORDER BY C.PRIMER_NOMBRE
+        ", ['fecha' => $date, 'id_user' => $id_user]);
+
+        $ventas = [];
+        foreach ($rows as $r) {
+            $estado = 'pendiente';
+            $badge = 'bg-warning text-dark';
+            $label = 'Pendiente';
+            if ($r->fecha_pago) {
+                $estado = 'cobrada';
+                $badge = 'bg-success';
+                $label = 'Cobrada';
+            } elseif (strtotime($r->fecha_cobro) < strtotime(date('Y-m-d'))) {
+                $estado = 'atrasada';
+                $badge = 'bg-danger';
+                $label = 'Atrasada';
+            }
+
+            $cuota = [
+                'id' => $r->id_cuota,
+                'monto' => (float)$r->cuota_mensual,
+                'fecha_cobro' => $r->fecha_cobro,
+                'fecha_pago' => $r->fecha_pago,
+                'cantidad_pago' => $r->cantidad_pago ? (float)$r->cantidad_pago : null,
+                'estado' => $estado,
+                'badge' => $badge,
+                'estado_label' => $label,
+            ];
+
+            $vid = $r->id_venta;
+            if (!isset($ventas[$vid])) {
+                $ventas[$vid] = [
+                    'id_venta' => $vid,
+                    'cliente' => $r->cliente,
+                    'telefono' => $r->contacto_telefonico,
+                    'telefono_2' => $r->contacto_telefonico_2,
+                    'cuota_mensual' => (float)$r->cuota_mensual,
+                    'total_pagar' => (float)$r->total_pagar,
+                    'residencial' => $r->residencial,
+                    'bloque' => $r->bloque,
+                    'lote' => $r->lote,
+                    'cuotas' => [],
+                ];
+            }
+            $ventas[$vid]['cuotas'][] = $cuota;
+        }
+
+        return response()->json([
+            'date' => $date,
+            'total_ventas' => count($ventas),
+            'total_cuotas' => count($rows),
+            'ventas' => array_values($ventas),
+        ]);
     }
 }
